@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Archive, BadgeCheck, Box, ChevronRight, CircleHelp, Droplets,
   Gauge, Heart, Home, InspectionPanel, KeyRound, PackageCheck, Play,
@@ -15,10 +15,10 @@ const levels = [
   { title: '干燥', short: '干燥', prompt: '拿起干燥吹风机，赶走每一颗小水珠！', guide: '选干燥吹风机，在水珠上来回移动', scene: 'dry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3 },
   { title: '注油', short: '注油', prompt: '给活动关节滴上小小润滑油！', guide: '选注油瓶，依次点击 5 个关节上的加号', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3 },
   { title: '检查', short: '检查', prompt: '移动放大镜，扫描藏起来的小污点！', guide: '选放大镜，不用点击，慢慢移动扫描 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3 },
-  { title: '包装', short: '包装', prompt: '装进无菌袋，再把袋口封好！', guide: '选无菌包装袋，点击每个包装袋上的加号', scene: 'pack', action: 'targets', goal: 4, correct: 'pouch', tools: ['box', 'pouch', 'basket'], stars: 3 },
-  { title: '灭菌', short: '灭菌', prompt: '转动温度旋钮，启动高温蒸汽！', guide: '选温度旋钮，围绕圆环持续转动到 100%', scene: 'sterilize', action: 'rotate', goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3 },
-  { title: '储存', short: '储存', prompt: '记住顺序，把无菌包放进储存柜！', guide: '选储存柜，记住每个柜格上的编号，再按顺序点击', scene: 'storage', action: 'memory', goal: 4, correct: 'cabinet', tools: ['basket', 'cabinet', 'box'], stars: 3 },
-  { title: '发放', short: '发放', prompt: '抓住绿色时机，安全交接无菌包！', guide: '选发放托盘，游标进入绿色区域时按下交接', scene: 'issue', action: 'timing', goal: 4, correct: 'tray', tools: ['tray', 'pouch', 'bag'], stars: 3 },
+  { title: '包装', short: '包装', prompt: '按编号顺序装袋并封好袋口！', guide: '选无菌包装袋，按 1 → 4 的顺序完成封口', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'pouch', tools: ['box', 'pouch', 'basket'], stars: 3, advanced: true },
+  { title: '灭菌', short: '灭菌', prompt: '顺时针转动旋钮，完成高温蒸汽灭菌！', guide: '选温度旋钮，沿圆环顺时针完成 3 圈', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true },
+  { title: '储存', short: '储存', prompt: '记住 6 步顺序，把无菌包放进储存柜！', guide: '选储存柜，记住 6 个柜格闪现的编号，再按顺序点击', scene: 'storage', action: 'memory', order: [4, 1, 5, 0, 3, 2], goal: 6, correct: 'cabinet', tools: ['basket', 'cabinet', 'box'], stars: 3, advanced: true },
+  { title: '发放', short: '发放', prompt: '跟上快节奏，抓住窄窄的绿色时机！', guide: '选发放托盘，游标进入绿色区域时按下交接', scene: 'issue', action: 'timing', goal: 4, correct: 'tray', tools: ['tray', 'pouch', 'bag'], stars: 3, advanced: true },
 ];
 
 const levelFacts = [
@@ -84,21 +84,19 @@ const toolData = {
   cabinet: ['储存柜', Archive], tray: ['发放托盘', InspectionPanel],
 };
 
-const memoryOrder = [2, 0, 3, 1];
-
-function ActionTarget({ index, action, selectedTool, hit, showMemory, onActivate, className = '' }) {
-  const memoryNumber = memoryOrder.indexOf(index) + 1;
+function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory, hinted, onActivate, className = '' }) {
+  const orderNumber = order.indexOf(index) + 1;
   return (
     <button
       type="button"
       data-target-index={index}
       aria-label={`操作目标 ${index + 1}`}
       tabIndex={action === 'scan' ? -1 : 0}
-      className={`action-target anchored-target ${action}-target ${hit ? 'hit' : ''} ${showMemory ? 'memorizing' : ''} ${className}`}
-      style={{ '--memory-order': memoryOrder.indexOf(index) }}
+      className={`action-target anchored-target ${action}-target ${hit ? 'hit' : ''} ${showMemory ? 'memorizing' : ''} ${hinted ? 'next-hint' : ''} ${className}`}
+      style={{ '--memory-order': order.indexOf(index) }}
       onClick={action === 'scan' ? undefined : () => onActivate(index)}
     >
-      <span>{hit ? '✓' : action === 'memory' && showMemory ? memoryNumber : action === 'scan' ? <Search/> : selectedTool ? '＋' : '?'}</span>
+      <span>{hit ? '✓' : action === 'ordered' ? orderNumber : action === 'memory' && showMemory ? orderNumber : action === 'scan' ? <Search/> : selectedTool ? '＋' : '?'}</span>
     </button>
   );
 }
@@ -150,7 +148,7 @@ function Instrument({ type = 0, clean = false, progress, className = '' }) {
   );
 }
 
-function MachineScene({ kind, progress }) {
+function MachineScene({ kind, progress, turnGoal = 1 }) {
   const isSterilizing = kind === 'sterilize';
   return (
     <div className={`machine-scene scene-${kind}`} style={{ '--scene-progress': `${progress}%` }} aria-hidden="true">
@@ -158,7 +156,7 @@ function MachineScene({ kind, progress }) {
         <div className={`machine-light red ${progress < 34 ? 'active' : ''}`} /><div className={`machine-light amber ${progress >= 34 && progress < 100 ? 'active' : ''}`} /><div className={`machine-light green ${progress >= 100 ? 'active' : ''}`} />
       </div>
       <div className="machine-window">
-        {isSterilizing ? <><div className="steam s1">〰</div><div className="steam s2">〰</div><div className="sterile-indicator">{progress >= 100 ? '灭菌完成 ✓' : `${Math.round(progress)}° 程序运行`}</div></> : <><span className="bubble b1" /><span className="bubble b2" /><span className="bubble b3" /></>}
+        {isSterilizing ? <><div className="steam s1">〰</div><div className="steam s2">〰</div><div className="sterile-indicator">{progress >= 100 ? '灭菌完成 ✓' : `顺时针 ${(progress / 100 * turnGoal).toFixed(1)} / ${turnGoal} 圈`}</div></> : <><span className="bubble b1" /><span className="bubble b2" /><span className="bubble b3" /></>}
         <Instrument type={0} progress={isSterilizing ? 100 : progress} /><Instrument type={1} progress={isSterilizing ? 100 : progress} />
       </div>
       <div className="machine-label">{kind === 'sterilize' ? 'STEAM' : 'WASH'}</div>
@@ -178,11 +176,11 @@ function CartoonNurse() {
   );
 }
 
-function MainIllustration({ level, progress, hitTargets, itemCount, selectedTool, showMemory, onTarget }) {
+function MainIllustration({ level, progress, hitTargets, itemCount, selectedTool, showMemory, hintedTarget, rotateTurns, onTarget }) {
   const cleanAmount = Math.min(100, progress);
   const hitCount = level.action === 'timing' ? itemCount : hitTargets.length;
-  const target = (index, className = '') => <ActionTarget key={`target-${index}`} index={index} action={level.action} selectedTool={selectedTool} hit={hitTargets.includes(index)} showMemory={showMemory} onActivate={onTarget} className={className}/>;
-  if (['washer', 'sterilize'].includes(level.scene)) return <MachineScene kind={level.scene} progress={cleanAmount} />;
+  const target = (index, className = '') => <ActionTarget key={`target-${index}`} index={index} action={level.action} order={level.order} selectedTool={selectedTool} hit={hitTargets.includes(index)} showMemory={showMemory} hinted={hintedTarget === index} onActivate={onTarget} className={className}/>;
+  if (['washer', 'sterilize'].includes(level.scene)) return <MachineScene kind={level.scene} progress={cleanAmount} turnGoal={rotateTurns} />;
   if (level.scene === 'sort') return (
     <div className="sort-scene">
       <div className="transfer-box"><Box/><b>安全转运盒</b><span>{hitCount} / {level.goal}</span></div>
@@ -248,12 +246,25 @@ function App() {
   const holdTimer = useRef(null);
   const memoryTimer = useRef(null);
   const lastAngle = useRef(null);
+  const reverseTravel = useRef(0);
+  const rotationWarned = useRef(false);
   const timingCanScore = useRef(true);
   const level = levels[levelIndex];
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
   const scanRadius = assistActive ? 76 : mistakes === 1 ? 64 : 54;
-  const timingHalfWidth = assistActive ? 20 : mistakes === 1 ? 13 : 8;
+  const timingHalfWidth = assistActive ? 14 : mistakes === 1 ? 8 : 5;
+  const timingCycleMs = assistActive ? 1850 : mistakes === 1 ? 1500 : 1200;
+  const rotateTurns = level.scene === 'sterilize' ? (assistActive ? 2 : mistakes === 1 ? 2.5 : level.turns) : 1;
+  const hintedTarget = assistActive && selectedTool && !showMemory && ['ordered', 'memory'].includes(level.action)
+    ? level.order?.[hitTargets.length]
+    : null;
+  const assistCopy = {
+    pack: '小助手：保留已完成步骤，下一个编号会发光',
+    sterilize: '小助手：顺时针引导已加强，目标调整为 2 圈',
+    storage: '小助手：延长记忆时间，并亮起下一格',
+    issue: '小助手：绿色区变宽，游标也会慢下来',
+  };
 
   const playTone = useCallback((kind = 'tap') => {
     if (!soundOn) return;
@@ -289,21 +300,21 @@ function App() {
   }, [completed, earnedStars, level.goal, levelIndex, playTone]);
 
   useEffect(() => {
-    if (['targets', 'scan', 'memory'].includes(level.action) && hitTargets.length >= level.goal) finishLevel();
-    if (!['targets', 'scan', 'memory'].includes(level.action) && progress >= level.goal) finishLevel();
+    if (['targets', 'ordered', 'scan', 'memory'].includes(level.action) && hitTargets.length >= level.goal) finishLevel();
+    if (!['targets', 'ordered', 'scan', 'memory'].includes(level.action) && progress >= level.goal) finishLevel();
   }, [finishLevel, hitTargets.length, level.action, level.goal, progress]);
 
   useEffect(() => {
     if (level.action !== 'timing' || !selectedTool || completed) { setTimingValue(0); return undefined; }
     const startedAt = performance.now();
     const timer = window.setInterval(() => {
-      const phase = ((performance.now() - startedAt) % 1800) / 1800;
+      const phase = ((performance.now() - startedAt) % timingCycleMs) / timingCycleMs;
       const next = phase < .5 ? phase * 200 : (1 - phase) * 200;
-      if (next < 34 || next > 66) timingCanScore.current = true;
+      if (next < 50 - timingHalfWidth || next > 50 + timingHalfWidth) timingCanScore.current = true;
       setTimingValue(next);
     }, 32);
     return () => window.clearInterval(timer);
-  }, [completed, level.action, selectedTool]);
+  }, [completed, level.action, selectedTool, timingCycleMs, timingHalfWidth]);
 
   useEffect(() => () => {
     window.clearInterval(holdTimer.current);
@@ -312,7 +323,7 @@ function App() {
 
   const resetLevel = useCallback(() => {
     window.clearInterval(holdTimer.current); window.clearTimeout(memoryTimer.current);
-    setProgress(0); setSelectedTool(null); setWrongTool(null); setHitTargets([]); setIsDragging(false); setDragPoint(null); setCleaningMarks([]); setIsHolding(false); setScanPoint(null); setShowMemory(false); setTimingValue(0); setMistakes(0); setCompleted(false); setMessage(''); lastPoint.current = null; lastAngle.current = null; timingCanScore.current = true;
+    setProgress(0); setSelectedTool(null); setWrongTool(null); setHitTargets([]); setIsDragging(false); setDragPoint(null); setCleaningMarks([]); setIsHolding(false); setScanPoint(null); setShowMemory(false); setTimingValue(0); setMistakes(0); setCompleted(false); setMessage(''); lastPoint.current = null; lastAngle.current = null; reverseTravel.current = 0; rotationWarned.current = false; timingCanScore.current = true;
   }, []);
 
   const startAt = (index) => {
@@ -332,10 +343,11 @@ function App() {
     }
     setWrongTool(null); setSelectedTool(tool); playTone('tap');
     if (level.action === 'memory') {
-      setShowMemory(true); setMessage('认真记住 1 → 2 → 3 → 4 的位置！');
+      const previewMs = mistakes >= 2 ? 5200 : mistakes === 1 ? 4200 : 3400;
+      setShowMemory(true); setMessage(`认真记住 1 → ${level.goal} 的位置！`);
       window.clearTimeout(memoryTimer.current);
-      memoryTimer.current = window.setTimeout(() => { setShowMemory(false); setMessage('轮到你按顺序操作啦！'); }, 2300);
-      setTimeout(() => setMessage(''), 3600);
+      memoryTimer.current = window.setTimeout(() => { setShowMemory(false); setMessage('轮到你按顺序操作啦！'); }, previewMs);
+      setTimeout(() => setMessage(''), previewMs + 1300);
     } else {
       setMessage('选对啦！现在动手吧 ✨'); setTimeout(() => setMessage(''), 1300);
     }
@@ -344,10 +356,21 @@ function App() {
   const handleTarget = (idx) => {
     if (!selectedTool || completed || hitTargets.includes(idx)) return;
     if (level.action === 'memory' && showMemory) return;
-    if (level.action === 'memory' && idx !== memoryOrder[hitTargets.length]) {
-      setMistakes(value => value + 1); setHitTargets([]); setProgress(0); setMessage('顺序不对，系统会再播放一次！'); setShowMemory(true); playTone('wrong');
+    if (['ordered', 'memory'].includes(level.action) && idx !== level.order[hitTargets.length]) {
+      const nextMistakes = mistakes + 1;
+      setMistakes(nextMistakes); playTone('wrong');
+      if (level.action === 'ordered') {
+        setMessage(nextMistakes >= 2 ? '顺序不对，看发光的下一步！' : `请先完成编号 ${hitTargets.length + 1}！`);
+        setTimeout(() => setMessage(''), 1400);
+        return;
+      }
+      const keepProgress = nextMistakes >= 2;
+      const previewMs = nextMistakes >= 2 ? 5200 : 4200;
+      if (!keepProgress) { setHitTargets([]); setProgress(0); }
+      setMessage(keepProgress ? '顺序不对，已保留进度并慢速重播！' : '顺序不对，系统会慢速再播放一次！');
+      setShowMemory(true);
       window.clearTimeout(memoryTimer.current);
-      memoryTimer.current = window.setTimeout(() => { setShowMemory(false); setMessage(''); }, 1800);
+      memoryTimer.current = window.setTimeout(() => { setShowMemory(false); setMessage(''); }, previewMs);
       return;
     }
     const next = [...hitTargets, idx]; setHitTargets(next); setProgress(next.length); playTone('tap');
@@ -384,8 +407,17 @@ function App() {
       setDragPoint({ x: e.clientX - bounds.left, y: e.clientY - bounds.top });
       const angle = Math.atan2(e.clientY - (bounds.top + bounds.height / 2), e.clientX - (bounds.left + bounds.width / 2));
       if (lastAngle.current !== null) {
-        const delta = Math.abs(Math.atan2(Math.sin(angle - lastAngle.current), Math.cos(angle - lastAngle.current)));
-        if (delta < 1.2) setProgress(value => Math.min(level.goal, value + delta * 11));
+        const delta = Math.atan2(Math.sin(angle - lastAngle.current), Math.cos(angle - lastAngle.current));
+        if (delta > 0 && delta < 1.2) {
+          setProgress(value => Math.min(level.goal, value + delta * 100 / (Math.PI * 2 * rotateTurns)));
+        } else if (delta < 0 && delta > -1.2 && !rotationWarned.current) {
+          reverseTravel.current += Math.abs(delta);
+          if (reverseTravel.current > .45) {
+            rotationWarned.current = true;
+            setMistakes(value => value + 1); setMessage('方向反啦，请跟着 ↻ 顺时针转动！'); playTone('wrong');
+            setTimeout(() => setMessage(''), 1500);
+          }
+        }
       }
       lastAngle.current = angle;
       return;
@@ -406,7 +438,7 @@ function App() {
   };
 
   const endDrag = () => {
-    setIsDragging(false); setDragPoint(null); setScanPoint(null); lastPoint.current = null; lastAngle.current = null;
+    setIsDragging(false); setDragPoint(null); setScanPoint(null); lastPoint.current = null; lastAngle.current = null; reverseTravel.current = 0; rotationWarned.current = false;
   };
 
   const startHold = (e) => {
@@ -431,7 +463,10 @@ function App() {
       timingCanScore.current = false; setProgress(value => Math.min(level.goal, value + 1)); setMessage('完美交接！等待下一件'); playTone('tap');
     } else if (!timingCanScore.current) {
       setMessage('下一件无菌包正在准备中…');
-    } else { setMistakes(value => value + 1); setMessage('再等等，游标进入绿色区再交接！'); playTone('wrong'); }
+    } else {
+      const nextMistakes = mistakes + 1;
+      setMistakes(nextMistakes); setMessage(nextMistakes >= 2 ? '小助手已放宽绿色区并降低速度！' : '再等等，游标进入绿色区再交接！'); playTone('wrong');
+    }
     setTimeout(() => setMessage(''), 900);
   };
 
@@ -440,9 +475,9 @@ function App() {
     setLevelIndex(i => i + 1); resetLevel();
   };
 
-  const displayProgress = ['targets', 'scan', 'memory', 'timing'].includes(level.action) ? Math.round((progress / level.goal) * 100) : Math.round(progress);
+  const displayProgress = ['targets', 'ordered', 'scan', 'memory', 'timing'].includes(level.action) ? Math.round((progress / level.goal) * 100) : Math.round(progress);
   const toolCursor = selectedTool ? toolData[selectedTool]?.[0] : '';
-  const visualItemCount = ['targets', 'scan', 'memory'].includes(level.action) ? hitTargets.length : level.action === 'timing' ? Math.round(progress) : 0;
+  const visualItemCount = ['targets', 'ordered', 'scan', 'memory'].includes(level.action) ? hitTargets.length : level.action === 'timing' ? Math.round(progress) : 0;
   const observation = useMemo(() => {
     const stage = displayProgress === 0 ? 0 : displayProgress < 45 ? 1 : displayProgress < 85 ? 2 : 3;
     const observations = {
@@ -480,7 +515,7 @@ function App() {
       <div className="level-map">
         {levels.map((item, i) => {
           const unlocked = i === 0 || earnedStars >= i * 3;
-          return <button key={item.title} disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{unlocked ? (earnedStars >= (i + 1) * 3 ? '★★★' : '开始任务') : '完成前一关解锁'}</small></span></button>;
+          return <Fragment key={item.title}>{i === 8 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{unlocked ? (earnedStars >= (i + 1) * 3 ? '★★★' : item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁'}</small></span></button></Fragment>;
         })}
       </div>
     </main>
@@ -491,7 +526,7 @@ function App() {
   );
 
   return (
-    <main className={`app-shell game-screen ${completed ? 'level-complete' : ''}`}>
+    <main className={`app-shell game-screen ${level.advanced ? 'advanced-level' : ''} ${completed ? 'level-complete' : ''}`}>
       <header className="game-header">
         <button className="round-button" aria-label="返回地图" onClick={() => setScreen('map')}><Home/></button>
         <div className="level-heading"><span>任务 {levelIndex + 1} / {levels.length}</span><b>{level.title}</b></div>
@@ -500,8 +535,8 @@ function App() {
       <div className="progress-track" aria-label={`任务进度 ${displayProgress}%`}><span style={{ width: `${displayProgress}%` }}/><b>{displayProgress}%</b><i><Star fill="currentColor"/></i></div>
       <section className="task-card">
         <div className="helper-avatar"><ShieldCheck/><span>•ᴗ•</span></div>
-        <div className="task-copy"><p>{level.prompt}</p><small>{assistActive ? `小助手已开启：正确工具会发光，操作范围也更宽松` : selectedTool ? level.guide : '先从下方选择合适的工具'}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
-        <div className="challenge-level" aria-label={`挑战难度 ${challengeRank} 星`}><b>挑战</b><span>{[1,2,3].map(rank => <i key={rank} className={rank <= challengeRank ? 'on' : ''}>★</i>)}</span></div>
+        <div className="task-copy"><p>{level.prompt}</p><small>{assistActive ? (assistCopy[level.scene] || '小助手已开启：正确工具会发光，操作范围也更宽松') : selectedTool ? level.guide : '先从下方选择合适的工具'}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
+        <div className={`challenge-level ${level.advanced ? 'advanced' : ''}`} aria-label={`挑战难度 ${challengeRank} 星`}><b>{level.advanced ? '进阶区' : '挑战'}</b><span>{[1,2,3].map(rank => <i key={rank} className={rank <= challengeRank ? 'on' : ''}>★</i>)}</span></div>
       </section>
       <section
         className={`play-zone ${selectedTool ? 'tool-active' : ''}`}
@@ -510,7 +545,10 @@ function App() {
             const bounds = e.currentTarget.getBoundingClientRect();
             setIsDragging(true);
             setDragPoint({ x: e.clientX - bounds.left, y: e.clientY - bounds.top });
-            if (level.action === 'rotate') lastAngle.current = Math.atan2(e.clientY - (bounds.top + bounds.height / 2), e.clientX - (bounds.left + bounds.width / 2));
+            if (level.action === 'rotate') {
+              lastAngle.current = Math.atan2(e.clientY - (bounds.top + bounds.height / 2), e.clientX - (bounds.left + bounds.width / 2));
+              reverseTravel.current = 0; rotationWarned.current = false;
+            }
             else lastPoint.current = { x: e.clientX, y: e.clientY };
             e.currentTarget.setPointerCapture(e.pointerId);
           }
@@ -521,12 +559,12 @@ function App() {
         onPointerCancel={endDrag}
         onPointerLeave={() => { if (level.action === 'scan') setScanPoint(null); }}
       >
-        <div className="scene-glow"/><MainIllustration level={level} progress={displayProgress} hitTargets={hitTargets} itemCount={visualItemCount} selectedTool={selectedTool} showMemory={showMemory} onTarget={handleTarget}/>
+        <div className="scene-glow"/><MainIllustration level={level} progress={displayProgress} hitTargets={hitTargets} itemCount={visualItemCount} selectedTool={selectedTool} showMemory={showMemory} hintedTarget={hintedTarget} rotateTurns={rotateTurns} onTarget={handleTarget}/>
         {observation && <div className={`clean-status process-stage-${observation.stage}`}><span className={`process-sample sample-${observation.sample}`}><i/><i/><i/></span><div><small>{observation.label}</small><b>{observation.text}</b></div></div>}
         {level.action === 'swipe' && selectedTool && <div className={`swipe-hint ${progress > 10 ? 'faded' : ''}`}><span>☝</span>来回滑动</div>}
         {level.action === 'hold' && <button className={`hold-control ${isHolding ? 'holding' : ''}`} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold} disabled={!selectedTool || completed}><span style={{ '--hold-progress': `${displayProgress}%` }}><Play fill="currentColor"/></span><b>{isHolding ? '机器运行中…' : selectedTool ? '按住启动' : '先选择启动钥匙'}</b><small>{displayProgress}%</small></button>}
-        {level.action === 'rotate' && <div className={`rotate-control ${isDragging ? 'rotating' : ''}`} aria-hidden="true"><div><Gauge/><span>↻</span></div><b>{selectedTool ? '沿圆环转动旋钮' : '先选择温度旋钮'}</b></div>}
-        {level.action === 'timing' && <div className="timing-game"><div className="timing-copy"><b>交接时机</b><span>已完成 {Math.round(progress)} / {level.goal}</span></div><div className="timing-track"><i className="timing-safe" style={{ left: `${50 - timingHalfWidth}%`, width: `${timingHalfWidth * 2}%` }}/><strong style={{ left: `${timingValue}%` }}/></div><button onClick={handleTiming} disabled={!selectedTool}>现在交接！</button></div>}
+        {level.action === 'rotate' && <div className={`rotate-control ${isDragging ? 'rotating' : ''} ${assistActive ? 'assisted' : ''}`} aria-hidden="true"><div><Gauge/><span>↻</span></div><b>{selectedTool ? `顺时针转动 · 目标 ${rotateTurns} 圈` : '先选择温度旋钮'}</b></div>}
+        {level.action === 'timing' && <div className={`timing-game ${assistActive ? 'assisted' : ''}`}><div className="timing-copy"><b>{assistActive ? '辅助节奏' : '快节奏交接'}</b><span>已完成 {Math.round(progress)} / {level.goal}</span></div><div className="timing-track"><i className="timing-safe" style={{ left: `${50 - timingHalfWidth}%`, width: `${timingHalfWidth * 2}%` }}/><strong style={{ left: `${timingValue}%` }}/></div><button onClick={handleTiming} disabled={!selectedTool}>现在交接！</button></div>}
         {isDragging && dragPoint && selectedTool && (
           <div className="dragged-tool" style={{ left: dragPoint.x, top: dragPoint.y }} aria-hidden="true">
             <ToolIcon name={selectedTool} size={56}/>
