@@ -250,7 +250,8 @@ function App() {
   const rotationWarned = useRef(false);
   const timingCanScore = useRef(true);
   const timingTrackRef = useRef(null);
-  const speechStartTimer = useRef(null);
+  const narrationStartTimer = useRef(null);
+  const narrationAudioRef = useRef(null);
   const level = levels[levelIndex];
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
@@ -314,27 +315,24 @@ function App() {
   }, [soundOn]);
 
   const speak = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    if (speechStartTimer.current) window.clearTimeout(speechStartTimer.current);
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(`${level.title}。${level.prompt}。${level.guide}`);
-    const availableVoices = window.speechSynthesis.getVoices();
-    const mainlandVoices = availableVoices.filter(voice => /^zh-CN\b/i.test(voice.lang));
-    const mandarinVoices = mainlandVoices.length ? mainlandVoices : availableVoices.filter(voice => /^zh\b/i.test(voice.lang));
-    const littleGirlVoicePatterns = [/xiaoyou/i, /xiaoshuang/i, /xiaomeng/i, /(?:female|girl|女).*(?:child|kid)|(?:child|kid).*(?:female|girl|女)/i, /xiaoyi/i, /xiaoxiao/i, /yaoyao|huihui|ting[- ]?ting|mei[- ]?jia/i, /google.*(?:普通话|mandarin)/i];
-    const littleGirlVoice = littleGirlVoicePatterns.reduce((match, pattern) => match || mandarinVoices.find(voice => pattern.test(voice.name)), null) || mandarinVoices[0];
-    if (littleGirlVoice) utterance.voice = littleGirlVoice;
-    utterance.lang = 'zh-CN';
-    utterance.rate = 1.03;
-    utterance.pitch = 1.18;
-    utterance.volume = 1;
-    utterance.onend = () => playSpriteChime('outro');
+    if (narrationStartTimer.current) window.clearTimeout(narrationStartTimer.current);
+    if (narrationAudioRef.current) {
+      narrationAudioRef.current.pause();
+      narrationAudioRef.current.currentTime = 0;
+    }
+    const narrationNumber = String(levelIndex + 1).padStart(2, '0');
+    const audio = new Audio(`${import.meta.env.BASE_URL}audio/narration-${narrationNumber}.mp3`);
+    audio.preload = 'auto';
+    audio.volume = 1;
+    audio.onended = () => playSpriteChime('outro');
+    audio.onerror = () => { narrationAudioRef.current = null; };
+    narrationAudioRef.current = audio;
     playSpriteChime('intro');
-    speechStartTimer.current = window.setTimeout(() => {
-      speechStartTimer.current = null;
-      window.speechSynthesis.speak(utterance);
+    narrationStartTimer.current = window.setTimeout(() => {
+      narrationStartTimer.current = null;
+      audio.play().catch(() => { narrationAudioRef.current = null; });
     }, soundOn ? 260 : 0);
-  }, [level, playSpriteChime, soundOn]);
+  }, [levelIndex, playSpriteChime, soundOn]);
 
   const finishLevel = useCallback(() => {
     if (completed) return;
