@@ -297,12 +297,12 @@ function App() {
     const availableVoices = window.speechSynthesis.getVoices();
     const mainlandVoices = availableVoices.filter(voice => /^zh-CN\b/i.test(voice.lang));
     const mandarinVoices = mainlandVoices.length ? mainlandVoices : availableVoices.filter(voice => /^zh\b/i.test(voice.lang));
-    const playfulVoicePatterns = [/xiaoshuang/i, /xiaoyou/i, /xiaomeng/i, /xiaoyi/i, /xiaoxiao/i, /child|kid/i, /natural|online|google.*(?:普通话|mandarin)/i];
-    const playfulVoice = playfulVoicePatterns.reduce((match, pattern) => match || mandarinVoices.find(voice => pattern.test(voice.name)), null) || mandarinVoices[0];
-    if (playfulVoice) utterance.voice = playfulVoice;
+    const childFriendlyVoicePatterns = [/xiaoyou/i, /child|kid/i, /xiaoyi/i, /xiaoxiao/i, /natural|online|google.*(?:普通话|mandarin)/i];
+    const childFriendlyVoice = childFriendlyVoicePatterns.reduce((match, pattern) => match || mandarinVoices.find(voice => pattern.test(voice.name)), null) || mandarinVoices[0];
+    if (childFriendlyVoice) utterance.voice = childFriendlyVoice;
     utterance.lang = 'zh-CN';
     utterance.rate = .94;
-    utterance.pitch = 1.12;
+    utterance.pitch = 1.07;
     utterance.volume = .96;
     window.speechSynthesis.speak(utterance);
   }, [level]);
