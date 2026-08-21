@@ -296,20 +296,20 @@ function App() {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       const ctx = new AudioCtx();
-      const notes = phase === 'outro' ? [1047, 784] : [659, 784, 1047];
+      const notes = phase === 'outro' ? [1319, 988, 1175] : [784, 988, 1319];
       notes.forEach((frequency, index) => {
-        const startedAt = ctx.currentTime + index * .075;
+        const startedAt = ctx.currentTime + index * .06;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = index % 2 ? 'triangle' : 'sine';
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(frequency, startedAt);
         gain.gain.setValueAtTime(.001, startedAt);
-        gain.gain.exponentialRampToValueAtTime(.045, startedAt + .018);
-        gain.gain.exponentialRampToValueAtTime(.001, startedAt + .18);
+        gain.gain.exponentialRampToValueAtTime(.055, startedAt + .012);
+        gain.gain.exponentialRampToValueAtTime(.001, startedAt + .14);
         osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(startedAt); osc.stop(startedAt + .2);
+        osc.start(startedAt); osc.stop(startedAt + .16);
       });
-      window.setTimeout(() => ctx.close(), 520);
+      window.setTimeout(() => ctx.close(), 420);
     } catch { /* sprite chime is optional */ }
   }, [soundOn]);
 
@@ -321,13 +321,13 @@ function App() {
     const availableVoices = window.speechSynthesis.getVoices();
     const mainlandVoices = availableVoices.filter(voice => /^zh-CN\b/i.test(voice.lang));
     const mandarinVoices = mainlandVoices.length ? mainlandVoices : availableVoices.filter(voice => /^zh\b/i.test(voice.lang));
-    const childFriendlyVoicePatterns = [/xiaoyou/i, /child|kid/i, /xiaoyi/i, /xiaoxiao/i, /natural|online|google.*(?:普通话|mandarin)/i];
-    const childFriendlyVoice = childFriendlyVoicePatterns.reduce((match, pattern) => match || mandarinVoices.find(voice => pattern.test(voice.name)), null) || mandarinVoices[0];
-    if (childFriendlyVoice) utterance.voice = childFriendlyVoice;
+    const littleGirlVoicePatterns = [/xiaoyou/i, /xiaoshuang/i, /xiaomeng/i, /(?:female|girl|女).*(?:child|kid)|(?:child|kid).*(?:female|girl|女)/i, /xiaoyi/i, /xiaoxiao/i, /yaoyao|huihui|ting[- ]?ting|mei[- ]?jia/i, /google.*(?:普通话|mandarin)/i];
+    const littleGirlVoice = littleGirlVoicePatterns.reduce((match, pattern) => match || mandarinVoices.find(voice => pattern.test(voice.name)), null) || mandarinVoices[0];
+    if (littleGirlVoice) utterance.voice = littleGirlVoice;
     utterance.lang = 'zh-CN';
-    utterance.rate = .94;
-    utterance.pitch = 1.07;
-    utterance.volume = .96;
+    utterance.rate = 1.03;
+    utterance.pitch = 1.18;
+    utterance.volume = 1;
     utterance.onend = () => playSpriteChime('outro');
     playSpriteChime('intro');
     speechStartTimer.current = window.setTimeout(() => {
