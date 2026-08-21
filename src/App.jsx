@@ -250,6 +250,8 @@ function App() {
   const rotationWarned = useRef(false);
   const timingCanScore = useRef(true);
   const timingTrackRef = useRef(null);
+  const narrationStartTimer = useRef(null);
+  const narrationAudioRef = useRef(null);
   const level = levels[levelIndex];
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
@@ -290,21 +292,47 @@ function App() {
     } catch { /* sound is optional */ }
   }, [soundOn]);
 
+  const playSpriteChime = useCallback((phase = 'intro') => {
+    if (!soundOn) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      const notes = phase === 'outro' ? [1319, 988, 1175] : [784, 988, 1319];
+      notes.forEach((frequency, index) => {
+        const startedAt = ctx.currentTime + index * .06;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(frequency, startedAt);
+        gain.gain.setValueAtTime(.001, startedAt);
+        gain.gain.exponentialRampToValueAtTime(.055, startedAt + .012);
+        gain.gain.exponentialRampToValueAtTime(.001, startedAt + .14);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(startedAt); osc.stop(startedAt + .16);
+      });
+      window.setTimeout(() => ctx.close(), 420);
+    } catch { /* sprite chime is optional */ }
+  }, [soundOn]);
+
   const speak = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(`${level.title}。${level.prompt}。${level.guide}`);
-    const availableVoices = window.speechSynthesis.getVoices();
-    const mainlandVoices = availableVoices.filter(voice => /^zh-CN\b/i.test(voice.lang));
-    const mandarinVoices = mainlandVoices.length ? mainlandVoices : availableVoices.filter(voice => /^zh\b/i.test(voice.lang));
-    const naturalVoice = mandarinVoices.find(voice => /natural|online|xiaoxiao|yunxi|google.*(?:普通话|mandarin)/i.test(voice.name)) || mandarinVoices[0];
-    if (naturalVoice) utterance.voice = naturalVoice;
-    utterance.lang = 'zh-CN';
-    utterance.rate = .95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    window.speechSynthesis.speak(utterance);
-  }, [level]);
+    if (narrationStartTimer.current) window.clearTimeout(narrationStartTimer.current);
+    if (narrationAudioRef.current) {
+      narrationAudioRef.current.pause();
+      narrationAudioRef.current.currentTime = 0;
+    }
+    const narrationNumber = String(levelIndex + 1).padStart(2, '0');
+    const audio = new Audio(`${import.meta.env.BASE_URL}audio/narration-${narrationNumber}.mp3`);
+    audio.preload = 'auto';
+    audio.volume = 1;
+    audio.onended = () => playSpriteChime('outro');
+    audio.onerror = () => { narrationAudioRef.current = null; };
+    narrationAudioRef.current = audio;
+    playSpriteChime('intro');
+    narrationStartTimer.current = window.setTimeout(() => {
+      narrationStartTimer.current = null;
+      audio.play().catch(() => { narrationAudioRef.current = null; });
+    }, soundOn ? 260 : 0);
+  }, [levelIndex, playSpriteChime, soundOn]);
 
   const finishLevel = useCallback(() => {
     if (completed) return;
