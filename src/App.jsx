@@ -297,12 +297,13 @@ function App() {
     const availableVoices = window.speechSynthesis.getVoices();
     const mainlandVoices = availableVoices.filter(voice => /^zh-CN\b/i.test(voice.lang));
     const mandarinVoices = mainlandVoices.length ? mainlandVoices : availableVoices.filter(voice => /^zh\b/i.test(voice.lang));
-    const naturalVoice = mandarinVoices.find(voice => /natural|online|xiaoxiao|yunxi|google.*(?:普通话|mandarin)/i.test(voice.name)) || mandarinVoices[0];
-    if (naturalVoice) utterance.voice = naturalVoice;
+    const gentleVoicePatterns = [/xiaoxiao/i, /xiaoyi/i, /xiaohan/i, /ting[- ]?ting/i, /meijia/i, /huihui/i, /natural|online|google.*(?:普通话|mandarin)/i];
+    const gentleVoice = gentleVoicePatterns.reduce((match, pattern) => match || mandarinVoices.find(voice => pattern.test(voice.name)), null) || mandarinVoices[0];
+    if (gentleVoice) utterance.voice = gentleVoice;
     utterance.lang = 'zh-CN';
-    utterance.rate = .95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    utterance.rate = .9;
+    utterance.pitch = 1.02;
+    utterance.volume = .92;
     window.speechSynthesis.speak(utterance);
   }, [level]);
 
