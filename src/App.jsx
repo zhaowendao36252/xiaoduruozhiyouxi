@@ -266,6 +266,22 @@ function App() {
     issue: '小助手：绿色区变宽，游标也会慢下来',
   };
 
+  useEffect(() => {
+    const updateStageScale = () => {
+      const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+      document.documentElement.style.setProperty('--stage-scale', String(scale));
+    };
+
+    updateStageScale();
+    window.addEventListener('resize', updateStageScale);
+    window.addEventListener('orientationchange', updateStageScale);
+    return () => {
+      window.removeEventListener('resize', updateStageScale);
+      window.removeEventListener('orientationchange', updateStageScale);
+      document.documentElement.style.removeProperty('--stage-scale');
+    };
+  }, []);
+
   const playTone = useCallback((kind = 'tap') => {
     if (!soundOn) return;
     try {
