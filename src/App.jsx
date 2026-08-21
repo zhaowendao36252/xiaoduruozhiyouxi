@@ -250,6 +250,7 @@ function App() {
   const rotationWarned = useRef(false);
   const timingCanScore = useRef(true);
   const timingTrackRef = useRef(null);
+  const speechStartTimer = useRef(null);
   const level = levels[levelIndex];
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
@@ -290,8 +291,31 @@ function App() {
     } catch { /* sound is optional */ }
   }, [soundOn]);
 
+  const playSpriteChime = useCallback((phase = 'intro') => {
+    if (!soundOn) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      const notes = phase === 'outro' ? [1047, 784] : [659, 784, 1047];
+      notes.forEach((frequency, index) => {
+        const startedAt = ctx.currentTime + index * .075;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = index % 2 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(frequency, startedAt);
+        gain.gain.setValueAtTime(.001, startedAt);
+        gain.gain.exponentialRampToValueAtTime(.045, startedAt + .018);
+        gain.gain.exponentialRampToValueAtTime(.001, startedAt + .18);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(startedAt); osc.stop(startedAt + .2);
+      });
+      window.setTimeout(() => ctx.close(), 520);
+    } catch { /* sprite chime is optional */ }
+  }, [soundOn]);
+
   const speak = useCallback(() => {
     if (!('speechSynthesis' in window)) return;
+    if (speechStartTimer.current) window.clearTimeout(speechStartTimer.current);
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(`${level.title}。${level.prompt}。${level.guide}`);
     const availableVoices = window.speechSynthesis.getVoices();
@@ -304,8 +328,13 @@ function App() {
     utterance.rate = .94;
     utterance.pitch = 1.07;
     utterance.volume = .96;
-    window.speechSynthesis.speak(utterance);
-  }, [level]);
+    utterance.onend = () => playSpriteChime('outro');
+    playSpriteChime('intro');
+    speechStartTimer.current = window.setTimeout(() => {
+      speechStartTimer.current = null;
+      window.speechSynthesis.speak(utterance);
+    }, soundOn ? 260 : 0);
+  }, [level, playSpriteChime, soundOn]);
 
   const finishLevel = useCallback(() => {
     if (completed) return;
