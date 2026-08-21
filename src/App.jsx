@@ -294,7 +294,15 @@ function App() {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(`${level.title}。${level.prompt}。${level.guide}`);
-    utterance.lang = 'zh-CN'; utterance.rate = .82; utterance.pitch = 1.25;
+    const availableVoices = window.speechSynthesis.getVoices();
+    const mainlandVoices = availableVoices.filter(voice => /^zh-CN\b/i.test(voice.lang));
+    const mandarinVoices = mainlandVoices.length ? mainlandVoices : availableVoices.filter(voice => /^zh\b/i.test(voice.lang));
+    const naturalVoice = mandarinVoices.find(voice => /natural|online|xiaoxiao|yunxi|google.*(?:普通话|mandarin)/i.test(voice.name)) || mandarinVoices[0];
+    if (naturalVoice) utterance.voice = naturalVoice;
+    utterance.lang = 'zh-CN';
+    utterance.rate = .95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
     window.speechSynthesis.speak(utterance);
   }, [level]);
 
