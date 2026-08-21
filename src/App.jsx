@@ -249,6 +249,7 @@ function App() {
   const reverseTravel = useRef(0);
   const rotationWarned = useRef(false);
   const timingCanScore = useRef(true);
+  const timingTrackRef = useRef(null);
   const level = levels[levelIndex];
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
@@ -264,6 +265,13 @@ function App() {
     sterilize: '小助手：顺时针引导已加强，目标调整为 2 圈',
     storage: '小助手：延长记忆时间，并亮起下一格',
     issue: '小助手：绿色区变宽，游标也会慢下来',
+  };
+  const getTimingEdgeTolerance = () => {
+    const trackBounds = timingTrackRef.current?.getBoundingClientRect();
+    const cursorBounds = timingTrackRef.current?.querySelector('strong')?.getBoundingClientRect();
+    return trackBounds?.width && cursorBounds?.width
+      ? (cursorBounds.width / 2 / trackBounds.width) * 100
+      : 0;
   };
 
   const playTone = useCallback((kind = 'tap') => {
@@ -310,7 +318,8 @@ function App() {
     const timer = window.setInterval(() => {
       const phase = ((performance.now() - startedAt) % timingCycleMs) / timingCycleMs;
       const next = phase < .5 ? phase * 200 : (1 - phase) * 200;
-      if (next < 50 - timingHalfWidth || next > 50 + timingHalfWidth) timingCanScore.current = true;
+      const edgeTolerance = getTimingEdgeTolerance();
+      if (next < 50 - timingHalfWidth - edgeTolerance || next > 50 + timingHalfWidth + edgeTolerance) timingCanScore.current = true;
       setTimingValue(next);
     }, 32);
     return () => window.clearInterval(timer);
@@ -459,7 +468,10 @@ function App() {
 
   const handleTiming = () => {
     if (!selectedTool || completed) return;
-    if (timingValue >= 50 - timingHalfWidth && timingValue <= 50 + timingHalfWidth && timingCanScore.current) {
+    const edgeTolerance = getTimingEdgeTolerance();
+    const lowerBound = 50 - timingHalfWidth - edgeTolerance;
+    const upperBound = 50 + timingHalfWidth + edgeTolerance;
+    if (timingValue >= lowerBound && timingValue <= upperBound && timingCanScore.current) {
       timingCanScore.current = false; setProgress(value => Math.min(level.goal, value + 1)); setMessage('完美交接！等待下一件'); playTone('tap');
     } else if (!timingCanScore.current) {
       setMessage('下一件无菌包正在准备中…');
@@ -564,7 +576,7 @@ function App() {
         {level.action === 'swipe' && selectedTool && <div className={`swipe-hint ${progress > 10 ? 'faded' : ''}`}><span>☝</span>来回滑动</div>}
         {level.action === 'hold' && <button className={`hold-control ${isHolding ? 'holding' : ''}`} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold} disabled={!selectedTool || completed}><span style={{ '--hold-progress': `${displayProgress}%` }}><Play fill="currentColor"/></span><b>{isHolding ? '机器运行中…' : selectedTool ? '按住启动' : '先选择启动钥匙'}</b><small>{displayProgress}%</small></button>}
         {level.action === 'rotate' && <div className={`rotate-control ${isDragging ? 'rotating' : ''} ${assistActive ? 'assisted' : ''}`} aria-hidden="true"><div><Gauge/><span>↻</span></div><b>{selectedTool ? `顺时针转动 · 目标 ${rotateTurns} 圈` : '先选择温度旋钮'}</b></div>}
-        {level.action === 'timing' && <div className={`timing-game ${assistActive ? 'assisted' : ''}`}><div className="timing-copy"><b>{assistActive ? '辅助节奏' : '快节奏交接'}</b><span>已完成 {Math.round(progress)} / {level.goal}</span></div><div className="timing-track"><i className="timing-safe" style={{ left: `${50 - timingHalfWidth}%`, width: `${timingHalfWidth * 2}%` }}/><strong style={{ left: `${timingValue}%` }}/></div><button onClick={handleTiming} disabled={!selectedTool}>现在交接！</button></div>}
+        {level.action === 'timing' && <div className={`timing-game ${assistActive ? 'assisted' : ''}`}><div className="timing-copy"><b>{assistActive ? '辅助节奏' : '快节奏交接'}</b><span>已完成 {Math.round(progress)} / {level.goal}</span></div><div ref={timingTrackRef} className="timing-track"><i className="timing-safe" style={{ left: `${50 - timingHalfWidth}%`, width: `${timingHalfWidth * 2}%` }}/><strong style={{ left: `${timingValue}%` }}/></div><button onPointerDown={handleTiming} onClick={(event) => { if (event.detail === 0) handleTiming(); }} disabled={!selectedTool}>现在交接！</button></div>}
         {isDragging && dragPoint && selectedTool && (
           <div className="dragged-tool" style={{ left: dragPoint.x, top: dragPoint.y }} aria-hidden="true">
             <ToolIcon name={selectedTool} size={56}/>
