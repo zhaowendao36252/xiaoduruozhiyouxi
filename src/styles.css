@@ -6,6 +6,8 @@ body { margin: 0; min-width: 320px; min-height: 100vh; overflow-x: hidden; }
 button { font: inherit; color: inherit; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button:focus-visible { outline: 4px solid rgba(255, 177, 71, .5); outline-offset: 3px; }
 #root { min-height: 100vh; }
+.app-shell,.app-shell * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; }
+.app-shell input,.app-shell textarea,[contenteditable="true"] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 .app-shell { position: relative; width: min(100%, 560px); min-height: 100vh; margin: 0 auto; overflow: hidden; background: linear-gradient(180deg,#cff4fa,#fff8e8); box-shadow: 0 0 50px rgba(28,106,131,.18); }
 .round-button { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.88); box-shadow: 0 7px 0 rgba(27,110,139,.12), 0 8px 20px rgba(27,110,139,.13); transition: .18s transform; z-index: 3; }
 .round-button:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(27,110,139,.12); }
