@@ -334,6 +334,14 @@ function App() {
     }, soundOn ? 260 : 0);
   }, [levelIndex, playSpriteChime, soundOn]);
 
+  // Entering a task (or moving to the next one) should start its narration
+  // automatically. The speaker button remains available for replaying it.
+  useEffect(() => {
+    if (screen !== 'game' || !soundOn) return undefined;
+    const autoPlayTimer = window.setTimeout(() => speak(), 0);
+    return () => window.clearTimeout(autoPlayTimer);
+  }, [screen, levelIndex, soundOn, speak]);
+
   const finishLevel = useCallback(() => {
     if (completed) return;
     setCompleted(true); setProgress(level.goal); playTone('win');
