@@ -2,4 +2,5 @@ node_modules/
 dist/
 .pnpm-store/
 *.local
-
+.codex-remote-attachments/
+.codex-image-ledger.md
