@@ -248,7 +248,7 @@ function MainIllustration({ level, progress, hitTargets, itemCount, selectedTool
   const status = cleanAmount >= 100 || (level.goal && hitCount >= level.goal) ? '本步骤完成' : selectedTool ? model.hint : '请选择本步骤所需设备';
 
   return (
-    <div className={`reference-scene-model model-${level.scene}`}>
+    <div className={`reference-scene-model model-${level.scene}`} onDragStart={(event) => event.preventDefault()}>
       <img src={sceneBackgrounds[level.scene]} alt="" draggable="false" />
       <div className="reference-model-vignette" aria-hidden="true" />
       <div className="reference-model-title"><span>{model.name}</span><b>{status}</b></div>
