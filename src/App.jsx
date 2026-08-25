@@ -19,19 +19,19 @@ import {
 } from 'lucide-react';
 
 const levels = [
-  { title: '器械预处理', short: '预处理', prompt: '选择正确工具：使用棉球处理器械表面可见污渍。', guide: '选择棉球，在器械表面来回擦拭', scene: 'table', action: 'swipe', goal: 100, correct: 'cotton', tools: ['cotton', 'towel', 'brush'], stars: 3 },
-  { title: '转运分类', short: '分类', prompt: '选择正确容器：将牙科器械逐件分类放入密闭转运盒。', guide: '选择密闭转运盒，依次放入分类后的器械', scene: 'sort', action: 'targets', goal: 5, correct: 'box', tools: ['basket', 'box', 'bag'], stars: 3 },
-  { title: '超声酶洗', short: '酶洗', prompt: '选择正确清洗剂：加入多酶液，以震荡模式进行超声酶洗。', guide: '选择多酶液，在超声清洗机内完成酶洗', scene: 'ultrasonic', action: 'swipe', goal: 100, correct: 'enzyme', tools: ['water', 'enzyme', 'soap'], stars: 3 },
-  { title: '流动水冲洗', short: '冲洗', prompt: '选择正确工具：使用流动水冲洗器械表面和缝隙。', guide: '选择高压冲洗枪，在器械上来回冲洗', scene: 'sink', action: 'swipe', goal: 100, correct: 'hose', tools: ['hose', 'cup', 'towel'], stars: 3 },
-  { title: '终末漂洗', short: '终末漂洗', prompt: '选择正确用水：使用纯水漂洗。', guide: '选择纯水，在终末漂洗槽内完成漂洗', scene: 'finalRinse', action: 'swipe', goal: 100, correct: 'pureWater', tools: ['pureWater', 'brush', 'fan'], stars: 3 },
-  { title: '吹干', short: '吹干', prompt: '选择正确工具：使用气枪吹走水珠。', guide: '选择气枪，在器械表面和缝隙来回吹干', scene: 'airDry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3 },
-  { title: '注油', short: '注油', prompt: '选择专用设备：往牙科手机内注入润滑油。', guide: '选择手机注油机，依次连接牙科手机接口', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3 },
-  { title: '干燥', short: '干燥', prompt: '选择正确控制项：放置烘干箱进行干燥。', guide: '选择启动按钮，启动医用器械干燥柜', scene: 'dry', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3 },
-  { title: '检查', short: '检查', prompt: '选择正确工具：使用放大镜检查器械清洁状况。', guide: '选择放大镜，移动扫描检查 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3 },
-  { title: '包装', short: '包装', prompt: '选择正确设备：将器械装入纸塑袋，并进行热封。', guide: '选择封口机，按顺序完成 4 个器械包热封', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'sealer', tools: ['box', 'sealer', 'basket'], stars: 3, advanced: true },
-  { title: '灭菌', short: '灭菌', prompt: '选择正确控制项：将封装器械放入压力蒸汽灭菌器。', guide: '选择温度旋钮，顺时针启动灭菌程序', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true },
-  { title: '储存', short: '储存', prompt: '选择正确位置：将已灭菌器械包分类放入无菌储存柜。', guide: '选择无菌储存柜，按亮起的标签顺序入柜', scene: 'storage', action: 'memory', order: [4, 1, 5, 0, 3, 2], goal: 6, correct: 'cabinet', tools: ['basket', 'cabinet', 'box'], stars: 3, advanced: true },
-  { title: '发放', short: '发放', prompt: '选择正确容器：按照需求，进行器械发放。', guide: '选择洁净发放托盘，在正确时机完成交接', scene: 'issue', action: 'timing', goal: 4, correct: 'tray', tools: ['tray', 'pouch', 'bag'], stars: 3, advanced: true },
+  { title: '器械预处理', short: '预处理', prompt: '选择正确工具：使用棉球处理器械表面可见污渍。', guide: '选择棉球，在器械表面来回擦拭', scene: 'table', action: 'swipe', goal: 100, correct: 'cotton', tools: ['cotton', 'towel', 'brush'], stars: 3, narrationTrack: 1 },
+  { title: '转运分类', short: '分类', prompt: '选择正确容器：将牙科器械逐件分类放入密闭转运盒。', guide: '选择密闭转运盒，依次放入分类后的器械', scene: 'sort', action: 'targets', goal: 5, correct: 'box', tools: ['basket', 'box', 'bag'], stars: 3, narrationTrack: 2 },
+  { title: '超声酶洗', short: '酶洗', prompt: '选择正确清洗剂：加入多酶液，以震荡模式进行超声酶洗。', guide: '选择多酶液，在超声清洗机内完成酶洗', scene: 'ultrasonic', action: 'swipe', goal: 100, correct: 'enzyme', tools: ['water', 'enzyme', 'soap'], stars: 3, narrationTrack: 3 },
+  { title: '流动水冲洗', short: '冲洗', prompt: '选择正确工具：使用流动水冲洗器械表面和缝隙。', guide: '选择高压冲洗枪，在器械上来回冲洗', scene: 'sink', action: 'swipe', goal: 100, correct: 'hose', tools: ['hose', 'cup', 'towel'], stars: 3, narrationTrack: 4 },
+  { title: '终末漂洗', short: '终末漂洗', prompt: '选择正确用水：使用纯水漂洗。', guide: '选择纯水，在终末漂洗槽内完成漂洗', scene: 'finalRinse', action: 'swipe', goal: 100, correct: 'pureWater', tools: ['pureWater', 'brush', 'fan'], stars: 3, narrationTrack: 5 },
+  { title: '吹干', short: '吹干', prompt: '选择正确工具：使用气枪吹走水珠。', guide: '选择气枪，在器械表面和缝隙来回吹干', scene: 'airDry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3, narrationTrack: 6 },
+  { title: '注油', short: '注油', prompt: '选择专用设备：往牙科手机内注入润滑油。', guide: '选择手机注油机，依次连接牙科手机接口', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3, narrationTrack: 7 },
+  { title: '干燥', short: '干燥', prompt: '选择正确控制项：放置烘干箱进行干燥。', guide: '选择启动按钮，启动医用器械干燥柜', scene: 'dry', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3, narrationText: '干燥，放置烘干箱进行干燥，选择启动按钮。' },
+  { title: '检查', short: '检查', prompt: '选择正确工具：使用放大镜检查器械清洁状况。', guide: '选择放大镜，移动扫描检查 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3, narrationTrack: 8 },
+  { title: '包装', short: '包装', prompt: '选择正确设备：将器械装入纸塑袋，并进行热封。', guide: '选择封口机，按顺序完成 4 个器械包热封', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'sealer', tools: ['box', 'sealer', 'basket'], stars: 3, advanced: true, narrationTrack: 9 },
+  { title: '灭菌', short: '灭菌', prompt: '选择正确控制项：将封装器械放入压力蒸汽灭菌器。', guide: '选择温度旋钮，顺时针启动灭菌程序', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true, narrationTrack: 10 },
+  { title: '储存', short: '储存', prompt: '选择正确位置：将已灭菌器械包分类放入无菌储存柜。', guide: '选择无菌储存柜，按亮起的标签顺序入柜', scene: 'storage', action: 'memory', order: [4, 1, 5, 0, 3, 2], goal: 6, correct: 'cabinet', tools: ['basket', 'cabinet', 'box'], stars: 3, advanced: true, narrationTrack: 11 },
+  { title: '发放', short: '发放', prompt: '选择正确容器：按照需求，进行器械发放。', guide: '选择洁净发放托盘，在正确时机完成交接', scene: 'issue', action: 'timing', goal: 4, correct: 'tray', tools: ['tray', 'pouch', 'bag'], stars: 3, advanced: true, narrationTrack: 12 },
 ];
 
 const sceneBackgrounds = {
@@ -90,27 +90,6 @@ const levelFacts = [
   '压力蒸汽灭菌需满足规定的温度、压力和时间。',
   '无菌包应在清洁、干燥且分类明确的储存柜中保存。',
   '发放前再次核对器械包的类别、数量和灭菌标识。',
-];
-
-// The supplied recordings follow the original 12-voice level order. The
-// rebuilt flow adds a dedicated drying level at position 8, so that new level
-// keeps its existing browser narration while the original audio topics stay
-// attached to their matching positions below.
-const narrationTracks = [1, 2, 3, 4, 5, 6, 7, null, 8, 9, 10, 11, 12];
-const narrationScripts = [
-  null,
-  null,
-  null,
-  null,
-  null,
-  null,
-  null,
-  '干燥，放置烘干箱进行干燥，选择启动按钮。',
-  null,
-  null,
-  null,
-  null,
-  null,
 ];
 
 const getNarrationVoice = () => {
@@ -464,14 +443,22 @@ function App() {
     } catch { /* sprite chime is optional */ }
   }, [soundOn]);
 
-  const speak = useCallback(() => {
-    if (narrationStartTimer.current) window.clearTimeout(narrationStartTimer.current);
+  const stopNarration = useCallback(() => {
+    if (narrationStartTimer.current) {
+      window.clearTimeout(narrationStartTimer.current);
+      narrationStartTimer.current = null;
+    }
     window.speechSynthesis?.cancel();
     if (narrationAudioRef.current) {
       narrationAudioRef.current.pause();
       narrationAudioRef.current.currentTime = 0;
+      narrationAudioRef.current = null;
     }
-    const narrationText = narrationScripts[levelIndex];
+  }, []);
+
+  const speak = useCallback(() => {
+    stopNarration();
+    const narrationText = level.narrationText;
     if (narrationText) {
       const utterance = new SpeechSynthesisUtterance(narrationText);
       utterance.lang = 'zh-CN';
@@ -489,7 +476,7 @@ function App() {
       }, soundOn ? 260 : 0);
       return;
     }
-    const track = narrationTracks[levelIndex];
+    const track = level.narrationTrack;
     if (!track || !soundOn) return;
     const narrationNumber = String(track).padStart(2, '0');
     const audio = new Audio(`${import.meta.env.BASE_URL}audio/narration-${narrationNumber}.mp3`);
@@ -503,15 +490,22 @@ function App() {
       narrationStartTimer.current = null;
       audio.play().catch(() => { narrationAudioRef.current = null; });
     }, soundOn ? 260 : 0);
-  }, [levelIndex, playSpriteChime, soundOn]);
+  }, [level.narrationText, level.narrationTrack, playSpriteChime, soundOn, stopNarration]);
 
-  // Entering a task (or moving to the next one) should start its narration
-  // automatically. The speaker button remains available for replaying it.
+  // Keep exactly one narration active. Changing a selected level, leaving the
+  // game, or turning sound off cancels the previous level before the next one
+  // is started.
   useEffect(() => {
-    if (screen !== 'game' || !soundOn) return undefined;
+    if (screen !== 'game' || !soundOn) {
+      stopNarration();
+      return undefined;
+    }
     const autoPlayTimer = window.setTimeout(() => speak(), 0);
-    return () => window.clearTimeout(autoPlayTimer);
-  }, [screen, levelIndex, soundOn, speak]);
+    return () => {
+      window.clearTimeout(autoPlayTimer);
+      stopNarration();
+    };
+  }, [screen, levelIndex, soundOn, speak, stopNarration]);
 
   const finishLevel = useCallback(() => {
     if (completed) return;
@@ -544,7 +538,8 @@ function App() {
     window.clearInterval(holdTimer.current);
     window.clearTimeout(memoryTimer.current);
     window.clearTimeout(cinematicTimer.current);
-  }, []);
+    stopNarration();
+  }, [stopNarration]);
 
   const resetLevel = useCallback(() => {
     window.clearInterval(holdTimer.current); window.clearTimeout(memoryTimer.current);
@@ -552,6 +547,7 @@ function App() {
   }, []);
 
   const startAt = (index) => {
+    stopNarration();
     setLevelIndex(index); setScreen('game');
     setTimeout(resetLevel, 0);
   };
@@ -701,17 +697,15 @@ function App() {
   const finishCinematicTransition = () => {
     if (!cinematicTransition) return;
     window.clearTimeout(cinematicTimer.current);
+    stopNarration();
     setLevelIndex(cinematicTransition.toIndex);
     resetLevel();
     setCinematicTransition(null);
   };
 
   const nextLevel = () => {
+    stopNarration();
     if (levelIndex === levels.length - 1) { setScreen('final'); return; }
-    if (narrationAudioRef.current) {
-      narrationAudioRef.current.pause();
-      narrationAudioRef.current.currentTime = 0;
-    }
     const nextTransition = { fromIndex: levelIndex, toIndex: levelIndex + 1 };
     const transitionDuration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 900 : 6500;
     setCinematicTransition(nextTransition);
@@ -778,7 +772,7 @@ function App() {
   return (
     <main className={`app-shell game-screen ${level.advanced ? 'advanced-level' : ''} ${completed ? 'level-complete' : ''}`}>
       <header className="game-header">
-        <button className="round-button" aria-label="返回地图" onClick={() => setScreen('map')}><Home/></button>
+        <button className="round-button" aria-label="返回地图" onClick={() => { stopNarration(); setScreen('map'); }}><Home/></button>
         <div className="level-heading"><span>任务 {levelIndex + 1} / {levels.length}</span><b>{level.title}</b></div>
         <button className="round-button" aria-label="朗读提示" onClick={speak}><Speaker/></button>
       </header>
