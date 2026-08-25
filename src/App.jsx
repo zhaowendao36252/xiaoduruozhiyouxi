@@ -26,7 +26,9 @@ const levels = [
   { title: '终末漂洗', short: '终末漂洗', prompt: '选择正确用水：使用纯水漂洗。', guide: '选择纯水，在终末漂洗槽内完成漂洗', scene: 'finalRinse', action: 'swipe', goal: 100, correct: 'pureWater', tools: ['pureWater', 'brush', 'fan'], stars: 3, narrationTrack: 5 },
   { title: '吹干', short: '吹干', prompt: '选择正确工具：使用气枪吹走水珠。', guide: '选择气枪，在器械表面和缝隙来回吹干', scene: 'airDry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3, narrationTrack: 6 },
   { title: '注油', short: '注油', prompt: '选择专用设备：往牙科手机内注入润滑油。', guide: '选择手机注油机，依次连接牙科手机接口', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3, narrationTrack: 7 },
-  { title: '干燥', short: '干燥', prompt: '选择正确控制项：放置烘干箱进行干燥。', guide: '选择启动按钮，启动医用器械干燥柜', scene: 'dry', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3, narrationText: '干燥，放置烘干箱进行干燥，选择启动按钮。' },
+  // Use the initial version's eighth recording for this added step so its
+  // voice, pacing, and sound structure stay consistent with the original.
+  { title: '启动', short: '启动', prompt: '选择正确控制项：启动烘干箱进行干燥。', guide: '选择启动按钮，启动医用器械干燥柜', scene: 'dry', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3, narrationTrack: 9 },
   { title: '检查', short: '检查', prompt: '选择正确工具：使用放大镜检查器械清洁状况。', guide: '选择放大镜，移动扫描检查 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3, narrationTrack: 8 },
   { title: '包装', short: '包装', prompt: '选择正确设备：将器械装入纸塑袋，并进行热封。', guide: '选择封口机，按顺序完成 4 个器械包热封', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'sealer', tools: ['box', 'sealer', 'basket'], stars: 3, advanced: true, narrationTrack: 9 },
   { title: '灭菌', short: '灭菌', prompt: '选择正确控制项：将封装器械放入压力蒸汽灭菌器。', guide: '选择温度旋钮，顺时针启动灭菌程序', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true, narrationTrack: 10 },
@@ -91,11 +93,6 @@ const levelFacts = [
   '无菌包应在清洁、干燥且分类明确的储存柜中保存。',
   '发放前再次核对器械包的类别、数量和灭菌标识。',
 ];
-
-const getNarrationVoice = () => {
-  const chineseVoices = window.speechSynthesis?.getVoices?.().filter(voice => /^zh(-|_)/i.test(voice.lang)) || [];
-  return chineseVoices.find(voice => /xiaoxiao|yaoyao|晓晓|瑶瑶|female|女/i.test(voice.name)) || chineseVoices[0] || null;
-};
 
 const dirtSpots = [
   { left: 24, top: 8, size: 10, clearsAt: 18 },
@@ -448,7 +445,6 @@ function App() {
       window.clearTimeout(narrationStartTimer.current);
       narrationStartTimer.current = null;
     }
-    window.speechSynthesis?.cancel();
     if (narrationAudioRef.current) {
       narrationAudioRef.current.pause();
       narrationAudioRef.current.currentTime = 0;
@@ -458,24 +454,6 @@ function App() {
 
   const speak = useCallback(() => {
     stopNarration();
-    const narrationText = level.narrationText;
-    if (narrationText) {
-      const utterance = new SpeechSynthesisUtterance(narrationText);
-      utterance.lang = 'zh-CN';
-      // Match the original children's narration: clear short phrases, a gentle pace,
-      // and a slightly bright upward tone instead of the browser's neutral default.
-      utterance.voice = getNarrationVoice();
-      utterance.rate = .9;
-      utterance.pitch = 1.1;
-      utterance.volume = 1;
-      utterance.onend = () => playSpriteChime('outro');
-      playSpriteChime('intro');
-      narrationStartTimer.current = window.setTimeout(() => {
-        narrationStartTimer.current = null;
-        if (soundOn) window.speechSynthesis?.speak(utterance);
-      }, soundOn ? 260 : 0);
-      return;
-    }
     const track = level.narrationTrack;
     if (!track || !soundOn) return;
     const narrationNumber = String(track).padStart(2, '0');
@@ -488,9 +466,11 @@ function App() {
     playSpriteChime('intro');
     narrationStartTimer.current = window.setTimeout(() => {
       narrationStartTimer.current = null;
-      audio.play().catch(() => { narrationAudioRef.current = null; });
+      audio.play().catch(() => {
+        narrationAudioRef.current = null;
+      });
     }, soundOn ? 260 : 0);
-  }, [level.narrationText, level.narrationTrack, playSpriteChime, soundOn, stopNarration]);
+  }, [level.narrationTrack, playSpriteChime, soundOn, stopNarration]);
 
   // Keep exactly one narration active. Changing a selected level, leaving the
   // game, or turning sound off cancels the previous level before the next one
