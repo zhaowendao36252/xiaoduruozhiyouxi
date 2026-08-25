@@ -26,9 +26,7 @@ const levels = [
   { title: '终末漂洗', short: '终末漂洗', prompt: '选择正确用水：使用纯水漂洗。', guide: '选择纯水，在终末漂洗槽内完成漂洗', scene: 'finalRinse', action: 'swipe', goal: 100, correct: 'pureWater', tools: ['pureWater', 'brush', 'fan'], stars: 3, narrationTrack: 5 },
   { title: '吹干', short: '吹干', prompt: '选择正确工具：使用气枪吹走水珠。', guide: '选择气枪，在器械表面和缝隙来回吹干', scene: 'airDry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3, narrationTrack: 6 },
   { title: '注油', short: '注油', prompt: '选择专用设备：往牙科手机内注入润滑油。', guide: '选择手机注油机，依次连接牙科手机接口', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3, narrationTrack: 7 },
-  // Use the initial version's eighth recording for this added step so its
-  // voice, pacing, and sound structure stay consistent with the original.
-  { title: '启动', short: '启动', prompt: '选择正确控制项：启动烘干箱进行干燥。', guide: '选择启动按钮，启动医用器械干燥柜', scene: 'dry', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3, narrationTrack: 9 },
+  { title: '清洗消毒', short: '清洗消毒', prompt: '放好器械，按住按键，启动清洗消毒机器，等待程序全部完成。', guide: '放好器械，按住启动按钮，等待清洗消毒程序全部完成', scene: 'washer', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3, narrationTrack: 13 },
   { title: '检查', short: '检查', prompt: '选择正确工具：使用放大镜检查器械清洁状况。', guide: '选择放大镜，移动扫描检查 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3, narrationTrack: 8 },
   { title: '包装', short: '包装', prompt: '选择正确设备：将器械装入纸塑袋，并进行热封。', guide: '选择封口机，按顺序完成 4 个器械包热封', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'sealer', tools: ['box', 'sealer', 'basket'], stars: 3, advanced: true, narrationTrack: 9 },
   { title: '灭菌', short: '灭菌', prompt: '选择正确控制项：将封装器械放入压力蒸汽灭菌器。', guide: '选择温度旋钮，顺时针启动灭菌程序', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true, narrationTrack: 10 },
@@ -86,7 +84,7 @@ const levelFacts = [
   '终末漂洗使用纯水，减少清洗剂和水垢残留。',
   '气枪吹干可去除器械缝隙和管腔中的水珠。',
   '牙科手机需通过专用注油设备完成润滑保养。',
-  '干燥柜可使器械彻底干燥，为检查和包装做准备。',
+  '清洗消毒机按程序完成清洗消毒，完成后再进入后续处理。',
   '放大检查有助于发现肉眼不易察觉的残留。',
   '纸塑袋热封后可在灭菌过程及后续储存中保护器械。',
   '压力蒸汽灭菌需满足规定的温度、压力和时间。',
@@ -389,6 +387,7 @@ function App() {
     ? level.order?.[hitTargets.length]
     : null;
   const assistCopy = {
+    washer: '小助手：清洗消毒程序会持续运行到进度完成',
     pack: '小助手：保留已完成步骤，下一个编号会发光',
     sterilize: '小助手：顺时针引导已加强，目标调整为 2 圈',
     storage: '小助手：延长记忆时间，并亮起下一格',
@@ -709,6 +708,7 @@ function App() {
       finalRinse: { label: '终末漂洗', sample: 'rinse', stages: ['等待纯水漂洗', '纯水正在流动', '残留正在去除', '终末漂洗完成'] },
       airDry: { label: '气枪吹干', sample: 'drops', stages: ['器械还有水珠', '水珠正在减少', '缝隙正在吹干', '吹干完成'] },
       dry: { label: '烘干观察', sample: 'drops', stages: ['等待启动干燥柜', '烘干程序运行', '器械正在干燥', '彻底干燥'] },
+      washer: { label: '清洗消毒观察', sample: 'rinse', stages: ['等待启动清洗消毒机', '清洗消毒程序运行', '器械正在清洗消毒', '程序全部完成'] },
     };
     const item = observations[level.scene];
     return item ? { ...item, text: item.stages[stage], stage } : null;
