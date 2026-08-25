@@ -92,18 +92,22 @@ const levelFacts = [
   '发放前再次核对器械包的类别、数量和灭菌标识。',
 ];
 
-const narrationTracks = [1, 2, null, null, null, null, null, null, null, null, 10, 11, 12];
+// The supplied recordings follow the original 12-voice level order. The
+// rebuilt flow adds a dedicated drying level at position 8, so that new level
+// keeps its existing browser narration while the original audio topics stay
+// attached to their matching positions below.
+const narrationTracks = [1, 2, 3, 4, 5, 6, 7, null, 8, 9, 10, 11, 12];
 const narrationScripts = [
   null,
   null,
-  '加入多酶液，以震荡模式进行超声酶洗。',
-  '使用流动水冲洗器械表面和缝隙。',
-  '终末漂洗，使用纯水漂洗。',
-  '吹干，使用气枪吹走水珠。',
-  '注油，往牙科手机内注入润滑油。',
+  null,
+  null,
+  null,
+  null,
+  null,
   '干燥，放置烘干箱进行干燥，选择启动按钮。',
-  '检查，使用放大镜检查器械清洁状况。',
-  '包装，选择封口机完成纸塑袋热封。',
+  null,
+  null,
   null,
   null,
   null,
