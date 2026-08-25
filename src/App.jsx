@@ -1,4 +1,16 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import pretreatmentBackground from './assets/scene-backgrounds/01-pretreatment.jpg';
+import sortingBackground from './assets/scene-backgrounds/02-sorting.jpg';
+import ultrasonicBackground from './assets/scene-backgrounds/03-ultrasonic.jpg';
+import rinsingBackground from './assets/scene-backgrounds/04-rinsing.jpg';
+import washerBackground from './assets/scene-backgrounds/05-washer.jpg';
+import dryingBackground from './assets/scene-backgrounds/06-drying.jpg';
+import oilingBackground from './assets/scene-backgrounds/07-oiling.jpg';
+import inspectionBackground from './assets/scene-backgrounds/08-inspection.jpg';
+import packagingBackground from './assets/scene-backgrounds/09-packaging.jpg';
+import sterilizationBackground from './assets/scene-backgrounds/10-sterilization.jpg';
+import storageBackground from './assets/scene-backgrounds/11-storage.jpg';
+import dispatchBackground from './assets/scene-backgrounds/12-dispatch.jpg';
 import {
   Archive, BadgeCheck, Box, ChevronRight, CircleHelp, Droplets,
   Gauge, Heart, Home, InspectionPanel, KeyRound, PackageCheck, Play,
@@ -7,34 +19,100 @@ import {
 } from 'lucide-react';
 
 const levels = [
-  { title: '器械预处理', short: '预处理', prompt: '喷上保湿泡泡，不让小污渍变干！', guide: '选泡泡喷壶，在器械上来回滑动', scene: 'table', action: 'swipe', goal: 100, correct: 'foam', tools: ['foam', 'towel', 'brush'], stars: 3 },
-  { title: '转运分类', short: '分类', prompt: '把器械分类放进安全的转运盒吧！', guide: '选蓝色转运盒，再点击每件器械上的加号', scene: 'sort', action: 'targets', goal: 5, correct: 'box', tools: ['basket', 'box', 'bag'], stars: 3 },
-  { title: '超声酶洗', short: '酶洗', prompt: '让酶液和超声波一起赶走污渍！', guide: '选酶液，在清洗槽里来回滑动', scene: 'ultrasonic', action: 'swipe', goal: 100, correct: 'enzyme', tools: ['water', 'enzyme', 'soap'], stars: 3 },
-  { title: '流动水冲洗', short: '冲洗', prompt: '用流动水冲走所有泡泡！', guide: '选冲洗水枪，在器械上来回滑动', scene: 'sink', action: 'swipe', goal: 100, correct: 'hose', tools: ['hose', 'cup', 'towel'], stars: 3 },
-  { title: '自动清洗消毒', short: '机洗消毒', prompt: '装好器械，长按启动清洗消毒机！', guide: '选启动钥匙，按住机器按钮直到程序完成', scene: 'washer', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3 },
-  { title: '干燥', short: '干燥', prompt: '拿起干燥吹风机，赶走每一颗小水珠！', guide: '选干燥吹风机，在水珠上来回移动', scene: 'dry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3 },
-  { title: '注油', short: '注油', prompt: '给活动关节滴上小小润滑油！', guide: '选注油瓶，依次点击 5 个关节上的加号', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3 },
-  { title: '检查', short: '检查', prompt: '移动放大镜，扫描藏起来的小污点！', guide: '选放大镜，不用点击，慢慢移动扫描 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3 },
-  { title: '包装', short: '包装', prompt: '按编号顺序装袋并封好袋口！', guide: '选无菌包装袋，按 1 → 4 的顺序完成封口', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'pouch', tools: ['box', 'pouch', 'basket'], stars: 3, advanced: true },
-  { title: '灭菌', short: '灭菌', prompt: '顺时针转动旋钮，完成高温蒸汽灭菌！', guide: '选温度旋钮，沿圆环顺时针完成 3 圈', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true },
-  { title: '储存', short: '储存', prompt: '记住 6 步顺序，把无菌包放进储存柜！', guide: '选储存柜，记住 6 个柜格闪现的编号，再按顺序点击', scene: 'storage', action: 'memory', order: [4, 1, 5, 0, 3, 2], goal: 6, correct: 'cabinet', tools: ['basket', 'cabinet', 'box'], stars: 3, advanced: true },
-  { title: '发放', short: '发放', prompt: '跟上快节奏，抓住窄窄的绿色时机！', guide: '选发放托盘，游标进入绿色区域时按下交接', scene: 'issue', action: 'timing', goal: 4, correct: 'tray', tools: ['tray', 'pouch', 'bag'], stars: 3, advanced: true },
+  { title: '器械预处理', short: '预处理', prompt: '选择正确工具：使用棉球处理器械表面可见污渍。', guide: '选择棉球，在器械表面来回擦拭', scene: 'table', action: 'swipe', goal: 100, correct: 'cotton', tools: ['cotton', 'towel', 'brush'], stars: 3 },
+  { title: '转运分类', short: '分类', prompt: '选择正确容器：将牙科器械逐件分类放入密闭转运盒。', guide: '选择密闭转运盒，依次放入分类后的器械', scene: 'sort', action: 'targets', goal: 5, correct: 'box', tools: ['basket', 'box', 'bag'], stars: 3 },
+  { title: '超声酶洗', short: '酶洗', prompt: '选择正确清洗剂：加入多酶液，以震荡模式进行超声酶洗。', guide: '选择多酶液，在超声清洗机内完成酶洗', scene: 'ultrasonic', action: 'swipe', goal: 100, correct: 'enzyme', tools: ['water', 'enzyme', 'soap'], stars: 3 },
+  { title: '流动水冲洗', short: '冲洗', prompt: '选择正确工具：使用流动水冲洗器械表面和缝隙。', guide: '选择高压冲洗枪，在器械上来回冲洗', scene: 'sink', action: 'swipe', goal: 100, correct: 'hose', tools: ['hose', 'cup', 'towel'], stars: 3 },
+  { title: '终末漂洗', short: '终末漂洗', prompt: '选择正确用水：使用纯水漂洗。', guide: '选择纯水，在终末漂洗槽内完成漂洗', scene: 'finalRinse', action: 'swipe', goal: 100, correct: 'pureWater', tools: ['pureWater', 'brush', 'fan'], stars: 3 },
+  { title: '吹干', short: '吹干', prompt: '选择正确工具：使用气枪吹走水珠。', guide: '选择气枪，在器械表面和缝隙来回吹干', scene: 'airDry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3 },
+  { title: '注油', short: '注油', prompt: '选择专用设备：往牙科手机内注入润滑油。', guide: '选择手机注油机，依次连接牙科手机接口', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3 },
+  { title: '干燥', short: '干燥', prompt: '选择正确控制项：放置烘干箱进行干燥。', guide: '选择启动按钮，启动医用器械干燥柜', scene: 'dry', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3 },
+  { title: '检查', short: '检查', prompt: '选择正确工具：使用放大镜检查器械清洁状况。', guide: '选择放大镜，移动扫描检查 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3 },
+  { title: '包装', short: '包装', prompt: '选择正确设备：将器械装入纸塑袋，并进行热封。', guide: '选择封口机，按顺序完成 4 个器械包热封', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'sealer', tools: ['box', 'sealer', 'basket'], stars: 3, advanced: true },
+  { title: '灭菌', short: '灭菌', prompt: '选择正确控制项：将封装器械放入压力蒸汽灭菌器。', guide: '选择温度旋钮，顺时针启动灭菌程序', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true },
+  { title: '储存', short: '储存', prompt: '选择正确位置：将已灭菌器械包分类放入无菌储存柜。', guide: '选择无菌储存柜，按亮起的标签顺序入柜', scene: 'storage', action: 'memory', order: [4, 1, 5, 0, 3, 2], goal: 6, correct: 'cabinet', tools: ['basket', 'cabinet', 'box'], stars: 3, advanced: true },
+  { title: '发放', short: '发放', prompt: '选择正确容器：按照需求，进行器械发放。', guide: '选择洁净发放托盘，在正确时机完成交接', scene: 'issue', action: 'timing', goal: 4, correct: 'tray', tools: ['tray', 'pouch', 'bag'], stars: 3, advanced: true },
 ];
 
+const sceneBackgrounds = {
+  table: pretreatmentBackground,
+  sort: sortingBackground,
+  ultrasonic: ultrasonicBackground,
+  sink: rinsingBackground,
+  washer: washerBackground,
+  finalRinse: rinsingBackground,
+  airDry: rinsingBackground,
+  dry: dryingBackground,
+  oil: oilingBackground,
+  inspect: inspectionBackground,
+  pack: packagingBackground,
+  sterilize: sterilizationBackground,
+  storage: storageBackground,
+  issue: dispatchBackground,
+};
+
+const sceneModels = {
+  table: { name: '器械预处理台', hint: '棉球预处理' },
+  sort: { name: '密闭转运盒', hint: '逐件分类入盒' },
+  ultrasonic: { name: '医用超声波清洗机', hint: '震荡酶洗' },
+  sink: { name: '流动水冲洗槽', hint: '高压冲洗' },
+  finalRinse: { name: '终末漂洗槽', hint: '纯水漂洗' },
+  airDry: { name: '压缩空气气枪', hint: '吹走水珠' },
+  oil: { name: '牙科手机注油机', hint: '连接手机接口' },
+  dry: { name: '医用器械干燥柜', hint: '启动烘干程序' },
+  inspect: { name: '带光源检查放大镜', hint: '放大检查' },
+  pack: { name: '医用纸塑包装热封机', hint: '包装热封' },
+  sterilize: { name: 'Class B 压力蒸汽灭菌器', hint: '高温蒸汽灭菌' },
+  storage: { name: '无菌物品储存柜', hint: '分类入柜' },
+  issue: { name: '洁净发放与传递窗', hint: '核对后发放' },
+  washer: { name: '清洗消毒机', hint: '机洗程序' },
+};
+
+const modelTargetPositions = {
+  sort: [[18, 27], [36, 21], [55, 27], [73, 21], [87, 27]],
+  oil: [[32, 29], [55, 27], [68, 43], [49, 59], [32, 67]],
+  inspect: [[29, 29], [63, 26], [48, 45], [70, 61], [31, 67]],
+  pack: [[25, 30], [75, 30], [25, 66], [75, 66]],
+  storage: [[31, 27], [69, 27], [31, 49], [69, 49], [31, 71], [69, 71]],
+};
+
 const levelFacts = [
-  '及时保湿能避免污渍干涸，让后续清洗更容易。',
-  '密闭分类转运可以保护工作人员，也能避免环境污染。',
-  '多酶液会分解污渍，超声波能清理器械细小缝隙。',
-  '流动水会把松动的污渍和残留清洗液一起带走。',
-  '清洗消毒机用标准程序完成清洗、漂洗与热消毒。',
-  '彻底干燥可以减少水分残留，为检查和包装做准备。',
-  '适量润滑能让器械关节保持灵活，延长使用寿命。',
-  '灯光和放大镜可以帮助发现肉眼不易察觉的残留。',
-  '完好的包装能够在灭菌后继续保护器械。',
-  '高温蒸汽需要达到规定的温度、压力和时间。',
-  '无菌包要放在清洁、干燥且分类明确的区域。',
-  '发放前还要再次核对包装、日期和灭菌标识。',
+  '预处理阶段使用棉球处理可见污渍，避免污染物干结。',
+  '污染器械应分类后置于密闭转运盒，减少交叉污染。',
+  '多酶液配合震荡模式，可清洁器械细小缝隙。',
+  '流动水冲洗能够带走松动的污物和清洗液残留。',
+  '终末漂洗使用纯水，减少清洗剂和水垢残留。',
+  '气枪吹干可去除器械缝隙和管腔中的水珠。',
+  '牙科手机需通过专用注油设备完成润滑保养。',
+  '干燥柜可使器械彻底干燥，为检查和包装做准备。',
+  '放大检查有助于发现肉眼不易察觉的残留。',
+  '纸塑袋热封后可在灭菌过程及后续储存中保护器械。',
+  '压力蒸汽灭菌需满足规定的温度、压力和时间。',
+  '无菌包应在清洁、干燥且分类明确的储存柜中保存。',
+  '发放前再次核对器械包的类别、数量和灭菌标识。',
 ];
+
+const narrationTracks = [1, 2, null, null, null, null, null, null, null, null, 10, 11, 12];
+const narrationScripts = [
+  null,
+  null,
+  '加入多酶液，以震荡模式进行超声酶洗。',
+  '使用流动水冲洗器械表面和缝隙。',
+  '终末漂洗，使用纯水漂洗。',
+  '吹干，使用气枪吹走水珠。',
+  '注油，往牙科手机内注入润滑油。',
+  '干燥，放置烘干箱进行干燥，选择启动按钮。',
+  '检查，使用放大镜检查器械清洁状况。',
+  '包装，选择封口机完成纸塑袋热封。',
+  null,
+  null,
+  null,
+];
+
+const getNarrationVoice = () => {
+  const chineseVoices = window.speechSynthesis?.getVoices?.().filter(voice => /^zh(-|_)/i.test(voice.lang)) || [];
+  return chineseVoices.find(voice => /xiaoxiao|yaoyao|晓晓|瑶瑶|female|女/i.test(voice.name)) || chineseVoices[0] || null;
+};
 
 const dirtSpots = [
   { left: 24, top: 8, size: 10, clearsAt: 18 },
@@ -48,14 +126,12 @@ const dirtSpots = [
 function DryerToolIcon({ size = 34, ...props }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" {...props}>
-      <path d="M7 22 29 16v25L7 35Z" fill="#75d4e7" stroke="#227f9b" strokeWidth="3" strokeLinejoin="round"/>
-      <path d="M7 22v13l-4-2V24Z" fill="#dff8fb" stroke="#227f9b" strokeWidth="2.5" strokeLinejoin="round"/>
-      <rect x="27" y="13" width="29" height="31" rx="14" fill="#35aecb" stroke="#227f9b" strokeWidth="3"/>
-      <circle cx="46" cy="28.5" r="9" fill="#eafcff" stroke="#227f9b" strokeWidth="2.5"/>
-      <path d="m46 20 2.5 6 5.5 2.5-5.5 2.2-2.5 6-2.5-6-5.5-2.2 5.5-2.5Z" fill="#ffbf4b"/>
-      <path d="M35 41h14l-3 18H33Z" fill="#58c3da" stroke="#227f9b" strokeWidth="3" strokeLinejoin="round"/>
-      <rect x="38" y="46" width="6" height="4" rx="2" fill="#fff"/>
-      <path d="M15 25h10M14 30h11" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity=".75"/>
+      <path d="M7 19h29l8 6-8 7H16l-5-5H7Z" fill="#dff1f3" stroke="#227f9b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M36 24h19l6 4-6 4H37" fill="#8bd7e3" stroke="#227f9b" strokeWidth="3"/>
+      <path d="M19 31h16l-5 24H17l-5-7Z" fill="#3bafd0" stroke="#227f9b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M29 35 39 45h-9" fill="#ffd05c" stroke="#227f9b" strokeWidth="2.5" strokeLinejoin="round"/>
+      <path d="M20 55c1 7 17 5 20 0 3-6-1-11-6-10" fill="none" stroke="#2f90b1" strokeWidth="4" strokeLinecap="round"/>
+      <path d="M7 21H1M3 18v6" stroke="#227f9b" strokeWidth="3" strokeLinecap="round"/>
     </svg>
   );
 }
@@ -75,16 +151,16 @@ function RinseGunToolIcon({ size = 34, ...props }) {
 }
 
 const toolData = {
-  foam: ['泡泡喷壶', SprayCan], towel: ['小毛巾', Archive], brush: ['小刷子', Sparkles],
-  basket: ['敞口篮', Archive], box: ['转运盒', Box], bag: ['普通袋', PackageCheck],
+  cotton: ['棉球', Archive], foam: ['保湿泡沫', SprayCan], towel: ['吸水巾', Archive], brush: ['清洗刷', Sparkles],
+  basket: ['金属清洗篮', Archive], box: ['密闭转运盒', Box], bag: ['普通袋', PackageCheck],
   water: ['清水瓶', Droplets], enzyme: ['多酶液', Sparkles], soap: ['洗手液', Droplets],
-  hose: ['冲洗水枪', RinseGunToolIcon], cup: ['小水杯', Droplets], key: ['启动钥匙', KeyRound],
-  fan: ['干燥吹风机', DryerToolIcon], oil: ['润滑油', Droplets], glass: ['放大镜', Search],
-  lamp: ['小台灯', ThermometerSun], pouch: ['包装袋', PackageCheck], dial: ['温度旋钮', Gauge],
+  pureWater: ['纯水', Droplets], hose: ['高压冲洗枪', RinseGunToolIcon], cup: ['小水杯', Droplets], key: ['启动按钮', KeyRound],
+  fan: ['气枪', DryerToolIcon], oil: ['手机注油机', Settings], glass: ['放大镜', Search],
+  lamp: ['小台灯', ThermometerSun], pouch: ['包装袋', PackageCheck], sealer: ['封口机', Settings], dial: ['温度旋钮', Gauge],
   cabinet: ['储存柜', Archive], tray: ['发放托盘', InspectionPanel],
 };
 
-function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory, hinted, onActivate, className = '' }) {
+function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory, hinted, onActivate, className = '', style = {} }) {
   const orderNumber = order.indexOf(index) + 1;
   return (
     <button
@@ -93,7 +169,7 @@ function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory
       aria-label={`操作目标 ${index + 1}`}
       tabIndex={action === 'scan' ? -1 : 0}
       className={`action-target anchored-target ${action}-target ${hit ? 'hit' : ''} ${showMemory ? 'memorizing' : ''} ${hinted ? 'next-hint' : ''} ${className}`}
-      style={{ '--memory-order': order.indexOf(index) }}
+      style={{ '--memory-order': order.indexOf(index), ...style }}
       onClick={action === 'scan' ? undefined : () => onActivate(index)}
     >
       <span>{hit ? '✓' : action === 'ordered' ? orderNumber : action === 'memory' && showMemory ? orderNumber : action === 'scan' ? <Search/> : selectedTool ? '＋' : '?'}</span>
@@ -102,11 +178,13 @@ function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory
 }
 
 function ToolIcon({ name, size = 34 }) {
+  if (name === 'pureWater') name = 'water';
   if (name === 'fan') return <DryerToolIcon size={size} aria-hidden="true" />;
   if (name === 'hose') return <RinseGunToolIcon size={size} aria-hidden="true" />;
 
   let shape;
   switch (name) {
+    case 'cotton': shape = <><circle cx="32" cy="32" r="22" fill="#fffdf6"/><path d="M15 31c8-11 25-12 34 0M16 37c9 10 24 10 32 0" stroke="#d9d8cf" strokeWidth="2"/><circle cx="25" cy="25" r="3" fill="#f1eee2"/><circle cx="38" cy="38" r="3" fill="#f1eee2"/></> ; break;
     case 'foam': shape = <><path d="M23 20h25l5 7v30H18V27Z" fill="#63cee0"/><path d="M28 20v-7h14v7M38 13h14l6 5H43"/><path d="M24 33h23v15H24Z" fill="#e8fbfd"/><circle cx="29" cy="39" r="3" fill="#8ce4ed"/><circle cx="38" cy="43" r="4" fill="#8ce4ed"/><circle cx="45" cy="37" r="2.5" fill="#8ce4ed"/></> ; break;
     case 'towel': shape = <><rect x="9" y="15" width="46" height="37" rx="7" fill="#74d4d0"/><path d="M17 23h30v21H17Z" fill="#c8f4ed"/><path d="M17 34h30M32 23v21" strokeDasharray="3 3"/><path d="M12 49c8-6 13-3 20 0s13 5 20-1"/></> ; break;
     case 'brush': shape = <><path d="M8 42 42 18l8 9-34 24Z" fill="#ffd15d"/><rect x="38" y="13" width="20" height="17" rx="5" transform="rotate(-7 38 13)" fill="#60c9dc"/><path d="m42 14 1-7m5 7 1-8m5 9 2-7"/><circle cx="18" cy="43" r="3" fill="#fff"/></> ; break;
@@ -122,6 +200,7 @@ function ToolIcon({ name, size = 34 }) {
     case 'glass': shape = <><circle cx="27" cy="26" r="17" fill="#cdf5f8"/><circle cx="27" cy="26" r="12" fill="#fff" opacity=".65"/><path d="m39 39 17 17" strokeWidth="9"/><path d="m39 39 17 17" stroke="#63c8d9" strokeWidth="5"/><path d="M18 20c5-6 12-5 16-1" stroke="#fff"/></> ; break;
     case 'lamp': shape = <><path d="M34 9 47 20 32 34 20 22Z" fill="#ffd45d"/><path d="m29 31-9 18M22 19 12 34m7 16h24"/><ellipse cx="31" cy="54" rx="20" ry="5" fill="#65c9d9"/><path d="m41 27 8 8" stroke="#ffb53f" strokeDasharray="3 3"/></> ; break;
     case 'pouch': shape = <><path d="M13 8h38v49H13Z" fill="#e8f5c8"/><path d="M13 16h38M13 50h38" strokeDasharray="3 3"/><rect x="20" y="21" width="24" height="24" rx="5" fill="#bce9e8"/><path d="m24 38 16-10M24 31l15 9" stroke="#6e9ba2"/></> ; break;
+    case 'sealer': shape = <><path d="M9 25h46v23H9Z" rx="5" fill="#e6eff0"/><path d="M14 21h36v8H14Z" fill="#74c9d5"/><path d="M16 31h28M16 38h21"/><rect x="45" y="29" width="6" height="13" rx="2" fill="#ffbb55"/><path d="M4 49h56" strokeWidth="4"/></> ; break;
     case 'dial': shape = <><circle cx="32" cy="32" r="25" fill="#dcebed"/><circle cx="32" cy="32" r="16" fill="#62c7d9"/><path d="M32 32V18" stroke="#fff" strokeWidth="5" strokeLinecap="round"/><path d="M17 13 12 8m35 5 5-5M8 32H2m54 0h6"/><circle cx="32" cy="32" r="4" fill="#fff"/></> ; break;
     case 'cabinet': shape = <><rect x="10" y="7" width="44" height="51" rx="5" fill="#76ccd5"/><path d="M32 8v49M11 27h42M11 44h42"/><circle cx="27" cy="18" r="2.5" fill="#fff"/><circle cx="37" cy="18" r="2.5" fill="#fff"/><path d="M17 32h9m12 0h9M17 49h9m12 0h9" stroke="#fff" opacity=".8"/></> ; break;
     case 'tray': shape = <><ellipse cx="32" cy="43" rx="27" ry="13" fill="#7cd3df"/><path d="M8 38c4 18 44 18 48 0" fill="#bcecf0"/><path d="M13 36h38M17 31h30"/><path d="M11 44h-7m49 0h7" strokeWidth="4"/></> ; break;
@@ -179,7 +258,32 @@ function CartoonNurse() {
 function MainIllustration({ level, progress, hitTargets, itemCount, selectedTool, showMemory, hintedTarget, rotateTurns, onTarget }) {
   const cleanAmount = Math.min(100, progress);
   const hitCount = level.action === 'timing' ? itemCount : hitTargets.length;
-  const target = (index, className = '') => <ActionTarget key={`target-${index}`} index={index} action={level.action} order={level.order} selectedTool={selectedTool} hit={hitTargets.includes(index)} showMemory={showMemory} hinted={hintedTarget === index} onActivate={onTarget} className={className}/>;
+  const target = (index, className = '', style = {}) => <ActionTarget key={`target-${index}`} index={index} action={level.action} order={level.order} selectedTool={selectedTool} hit={hitTargets.includes(index)} showMemory={showMemory} hinted={hintedTarget === index} onActivate={onTarget} className={className} style={style}/>;
+  const model = sceneModels[level.scene];
+  const positions = modelTargetPositions[level.scene] || [];
+  const hasTargets = positions.length > 0;
+  const status = cleanAmount >= 100 || (level.goal && hitCount >= level.goal) ? '本步骤完成' : selectedTool ? model.hint : '请选择本步骤所需设备';
+
+  return (
+    <div className={`reference-scene-model model-${level.scene}`}>
+      <img src={sceneBackgrounds[level.scene]} alt="" draggable="false" />
+      <div className="reference-model-vignette" aria-hidden="true" />
+      <div className="reference-model-title"><span>{model.name}</span><b>{status}</b></div>
+      {hasTargets && <div className="reference-model-targets">
+        {Array.from({ length: level.goal }, (_, index) => {
+          const [left, top] = positions[index] || [50, 50];
+          return target(index, 'reference-model-target', { left: `${left}%`, top: `${top}%` });
+        })}
+      </div>}
+      {['swipe', 'hold', 'rotate'].includes(level.action) && <div className={`reference-model-progress ${cleanAmount >= 100 ? 'complete' : ''}`}><i style={{ width: `${cleanAmount}%` }}/></div>}
+      {level.scene === 'table' && <div className="reference-model-cotton" aria-hidden="true"><ToolIcon name="cotton" size={34}/></div>}
+      {level.scene === 'sort' && <div className="reference-sort-box" aria-hidden="true"><ToolIcon name="box" size={46}/><div>{Array.from({ length: level.goal }, (_, index) => <i key={index} className={hitTargets.includes(index) ? 'stored' : ''}>{hitTargets.includes(index) ? '✓' : '⌁'}</i>)}</div><b>分类转运盒</b></div>}
+      {level.scene === 'airDry' && <div className="reference-model-air" aria-hidden="true">⌁⌁⌁</div>}
+      {level.scene === 'sterilize' && <div className="reference-model-steam" aria-hidden="true">⌁⌁</div>}
+      <b className="reference-model-counter">{['targets', 'ordered', 'scan', 'memory', 'timing'].includes(level.action) ? `${hitCount} / ${level.goal}` : `${Math.round(cleanAmount)}%`}</b>
+    </div>
+  );
+
   if (['washer', 'sterilize'].includes(level.scene)) return <MachineScene kind={level.scene} progress={cleanAmount} turnGoal={rotateTurns} />;
   if (level.scene === 'sort') return (
     <div className="sort-scene">
@@ -221,9 +325,46 @@ function Confetti() {
   return <div className="confetti" aria-hidden="true">{Array.from({ length: 22 }, (_, i) => <i key={i} style={{ '--i': i }} />)}</div>;
 }
 
+function CinematicTransition({ fromIndex, toIndex, onSkip }) {
+  const fromLevel = levels[fromIndex];
+  const toLevel = levels[toIndex];
+  return (
+    <div className="cinematic-transition" role="dialog" aria-label={`正在从${fromLevel.title}前往${toLevel.title}`}>
+      <div className="cinematic-scene cinematic-scene-from" style={{ backgroundImage: `url(${sceneBackgrounds[fromLevel.scene]})` }}/>
+      <div className="cinematic-scene cinematic-scene-to" style={{ backgroundImage: `url(${sceneBackgrounds[toLevel.scene]})` }}/>
+      <div className="cinematic-vignette"/>
+      <div className="cinematic-grain"/>
+      <div className="cinematic-light"/>
+      <div className="cinematic-flash"/>
+      <div className="cinematic-letterbox cinematic-letterbox-top"/>
+      <div className="cinematic-letterbox cinematic-letterbox-bottom"/>
+      <section className="cinematic-copy cinematic-copy-from">
+        <span>SCENE {String(fromIndex + 1).padStart(2, '0')} · COMPLETE</span>
+        <h2>{fromLevel.title}</h2>
+        <i/>
+        <p>本工作区任务完成</p>
+      </section>
+      <section className="cinematic-copy cinematic-copy-to">
+        <span>NEXT WORK AREA</span>
+        <p>沿洁净流程继续前行</p>
+        <h2>{toLevel.title}</h2>
+        <i/>
+        <small>任务 {toIndex + 1} / {levels.length}</small>
+      </section>
+      <div className="cinematic-route" aria-hidden="true"><b>{fromLevel.short}</b><span/><em>→</em><span/><b>{toLevel.short}</b></div>
+      <div className="cinematic-progress" aria-hidden="true"><span/></div>
+      <button className="cinematic-skip" onClick={onSkip}>跳过转场</button>
+    </div>
+  );
+}
+
 function App() {
+  // The revised 13-step workflow has different ordering from the earlier demo.
+  // Keep a separate version marker so old saved progress cannot unlock later steps.
+  const workflowVersion = 'gold-sterilizer-v2';
+  const hasCurrentWorkflow = localStorage.getItem('clean-game-workflow-version') === workflowVersion;
   const [screen, setScreen] = useState('home');
-  const [levelIndex, setLevelIndex] = useState(() => Number(localStorage.getItem('clean-game-level') || 0));
+  const [levelIndex, setLevelIndex] = useState(() => hasCurrentWorkflow ? Number(localStorage.getItem('clean-game-level') || 0) : 0);
   const [progress, setProgress] = useState(0);
   const [selectedTool, setSelectedTool] = useState(null);
   const [wrongTool, setWrongTool] = useState(null);
@@ -240,7 +381,8 @@ function App() {
   const [soundOn, setSoundOn] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [earnedStars, setEarnedStars] = useState(() => Number(localStorage.getItem('clean-game-stars') || 0));
+  const [cinematicTransition, setCinematicTransition] = useState(null);
+  const [earnedStars, setEarnedStars] = useState(() => hasCurrentWorkflow ? Number(localStorage.getItem('clean-game-stars') || 0) : 0);
   const lastPoint = useRef(null);
   const cleaningMarkId = useRef(0);
   const holdTimer = useRef(null);
@@ -252,6 +394,10 @@ function App() {
   const timingTrackRef = useRef(null);
   const narrationStartTimer = useRef(null);
   const narrationAudioRef = useRef(null);
+  const cinematicTimer = useRef(null);
+  useEffect(() => {
+    localStorage.setItem('clean-game-workflow-version', workflowVersion);
+  }, []);
   const level = levels[levelIndex];
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
@@ -316,11 +462,32 @@ function App() {
 
   const speak = useCallback(() => {
     if (narrationStartTimer.current) window.clearTimeout(narrationStartTimer.current);
+    window.speechSynthesis?.cancel();
     if (narrationAudioRef.current) {
       narrationAudioRef.current.pause();
       narrationAudioRef.current.currentTime = 0;
     }
-    const narrationNumber = String(levelIndex + 1).padStart(2, '0');
+    const narrationText = narrationScripts[levelIndex];
+    if (narrationText) {
+      const utterance = new SpeechSynthesisUtterance(narrationText);
+      utterance.lang = 'zh-CN';
+      // Match the original children's narration: clear short phrases, a gentle pace,
+      // and a slightly bright upward tone instead of the browser's neutral default.
+      utterance.voice = getNarrationVoice();
+      utterance.rate = .9;
+      utterance.pitch = 1.1;
+      utterance.volume = 1;
+      utterance.onend = () => playSpriteChime('outro');
+      playSpriteChime('intro');
+      narrationStartTimer.current = window.setTimeout(() => {
+        narrationStartTimer.current = null;
+        if (soundOn) window.speechSynthesis?.speak(utterance);
+      }, soundOn ? 260 : 0);
+      return;
+    }
+    const track = narrationTracks[levelIndex];
+    if (!track || !soundOn) return;
+    const narrationNumber = String(track).padStart(2, '0');
     const audio = new Audio(`${import.meta.env.BASE_URL}audio/narration-${narrationNumber}.mp3`);
     audio.preload = 'auto';
     audio.volume = 1;
@@ -372,6 +539,7 @@ function App() {
   useEffect(() => () => {
     window.clearInterval(holdTimer.current);
     window.clearTimeout(memoryTimer.current);
+    window.clearTimeout(cinematicTimer.current);
   }, []);
 
   const resetLevel = useCallback(() => {
@@ -526,9 +694,29 @@ function App() {
     setTimeout(() => setMessage(''), 900);
   };
 
+  const finishCinematicTransition = () => {
+    if (!cinematicTransition) return;
+    window.clearTimeout(cinematicTimer.current);
+    setLevelIndex(cinematicTransition.toIndex);
+    resetLevel();
+    setCinematicTransition(null);
+  };
+
   const nextLevel = () => {
     if (levelIndex === levels.length - 1) { setScreen('final'); return; }
-    setLevelIndex(i => i + 1); resetLevel();
+    if (narrationAudioRef.current) {
+      narrationAudioRef.current.pause();
+      narrationAudioRef.current.currentTime = 0;
+    }
+    const nextTransition = { fromIndex: levelIndex, toIndex: levelIndex + 1 };
+    const transitionDuration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 900 : 6500;
+    setCinematicTransition(nextTransition);
+    window.clearTimeout(cinematicTimer.current);
+    cinematicTimer.current = window.setTimeout(() => {
+      setLevelIndex(nextTransition.toIndex);
+      resetLevel();
+      setCinematicTransition(null);
+    }, transitionDuration);
   };
 
   const displayProgress = ['targets', 'ordered', 'scan', 'memory', 'timing'].includes(level.action) ? Math.round((progress / level.goal) * 100) : Math.round(progress);
@@ -537,10 +725,12 @@ function App() {
   const observation = useMemo(() => {
     const stage = displayProgress === 0 ? 0 : displayProgress < 45 ? 1 : displayProgress < 85 ? 2 : 3;
     const observations = {
-      table: { label: '保湿覆盖', sample: 'foam', stages: ['等待喷洒泡沫', '泡沫正在覆盖', '器械保持湿润', '预处理完成'] },
-      ultrasonic: { label: '清洗观察', sample: 'dirt', stages: ['污渍清晰可见', '污渍开始松动', '污渍正在减少', '酶洗干净'] },
-      sink: { label: '冲洗观察', sample: 'rinse', stages: ['残余泡沫较多', '泡沫正在冲走', '只剩少量泡沫', '冲洗完成'] },
-      dry: { label: '干燥观察', sample: 'drops', stages: ['器械还有水珠', '水珠正在减少', '只剩少量水珠', '彻底干燥'] },
+      table: { label: '预处理观察', sample: 'dirt', stages: ['可见污渍待处理', '棉球正在擦拭', '表面污渍减少', '预处理完成'] },
+      ultrasonic: { label: '超声酶洗', sample: 'dirt', stages: ['器械待酶洗', '震荡正在进行', '污物正在松脱', '酶洗完成'] },
+      sink: { label: '流动水冲洗', sample: 'rinse', stages: ['等待冲洗', '持续冲洗中', '缝隙正在清洁', '冲洗完成'] },
+      finalRinse: { label: '终末漂洗', sample: 'rinse', stages: ['等待纯水漂洗', '纯水正在流动', '残留正在去除', '终末漂洗完成'] },
+      airDry: { label: '气枪吹干', sample: 'drops', stages: ['器械还有水珠', '水珠正在减少', '缝隙正在吹干', '吹干完成'] },
+      dry: { label: '烘干观察', sample: 'drops', stages: ['等待启动干燥柜', '烘干程序运行', '器械正在干燥', '彻底干燥'] },
     };
     const item = observations[level.scene];
     return item ? { ...item, text: item.stages[stage], stage } : null;
@@ -554,9 +744,9 @@ function App() {
       <section className="hero-card">
         <div className="mascot-bubble"><ShieldCheck size={68}/><span className="mascot-face">•ᴗ•</span></div>
         <p className="eyebrow">互动科普展 · DENTAL CLEAN TEAM</p>
-        <h1>小小消毒师</h1>
+        <h1>小小金牌消毒员</h1>
         <p className="hero-subtitle">器械大冒险</p>
-        <div className="hero-badges"><span><Sparkles/>12 个任务</span><span><Star/>边玩边学</span><span><Droplets/>观察流程变化</span></div>
+        <div className="hero-badges"><span><Sparkles/>13 个任务</span><span><Star/>边玩边学</span><span><Droplets/>观察流程变化</span></div>
         <button className="primary-button" onClick={() => startAt(Math.min(levelIndex, levels.length - 1))}><Play fill="currentColor"/>开始冒险</button>
         {earnedStars > 0 && <button className="text-button" onClick={() => setScreen('map')}>查看闯关地图 <ChevronRight/></button>}
       </section>
@@ -571,14 +761,14 @@ function App() {
       <div className="level-map">
         {levels.map((item, i) => {
           const unlocked = i === 0 || earnedStars >= i * 3;
-          return <Fragment key={item.title}>{i === 8 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{unlocked ? (earnedStars >= (i + 1) * 3 ? '★★★' : item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁'}</small></span></button></Fragment>;
+          return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{unlocked ? (earnedStars >= (i + 1) * 3 ? '★★★' : item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁'}</small></span></button></Fragment>;
         })}
       </div>
     </main>
   );
 
   if (screen === 'final') return (
-    <main className="app-shell final-screen"><Confetti/><div className="final-card"><div className="big-medal"><BadgeCheck/></div><p>全部完成</p><h1>金牌小小消毒师</h1><div className="final-stars"><Star/><Star/><Star/></div><p className="final-copy">你让每一件器械都安全、干净、闪闪发光！</p><button className="primary-button" onClick={() => setScreen('map')}>看看我的奖章</button><button className="text-button" onClick={() => { setLevelIndex(0); resetLevel(); setScreen('game'); }}><RotateCcw/>再玩一次</button></div></main>
+    <main className="app-shell final-screen"><Confetti/><div className="final-card"><div className="big-medal"><BadgeCheck/></div><p>全部完成</p><h1>小小金牌消毒员</h1><div className="final-stars"><Star/><Star/><Star/></div><p className="final-copy">你已完成牙科器械规范处理全流程！</p><button className="primary-button" onClick={() => setScreen('map')}>看看我的奖章</button><button className="text-button" onClick={() => { setLevelIndex(0); resetLevel(); setScreen('game'); }}><RotateCcw/>再玩一次</button></div></main>
   );
 
   return (
@@ -591,7 +781,7 @@ function App() {
       <div className="progress-track" aria-label={`任务进度 ${displayProgress}%`}><span style={{ width: `${displayProgress}%` }}/><b>{displayProgress}%</b><i><Star fill="currentColor"/></i></div>
       <section className="task-card">
         <div className="helper-avatar"><ShieldCheck/><span>•ᴗ•</span></div>
-        <div className="task-copy"><p>{level.prompt}</p><small>{assistActive ? (assistCopy[level.scene] || '小助手已开启：正确工具会发光，操作范围也更宽松') : selectedTool ? level.guide : '先从下方选择合适的工具'}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
+        <div className="task-copy"><p>{level.prompt}</p><small>{assistActive ? (assistCopy[level.scene] || '小助手已开启：当前必做设备已高亮，操作范围也更宽松') : selectedTool ? level.guide : level.tools.length > 1 ? '先从下方选择正确工具' : '从下方拿取本步骤必做工具'}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
         <div className={`challenge-level ${level.advanced ? 'advanced' : ''}`} aria-label={`挑战难度 ${challengeRank} 星`}><b>{level.advanced ? '进阶区' : '挑战'}</b><span>{[1,2,3].map(rank => <i key={rank} className={rank <= challengeRank ? 'on' : ''}>★</i>)}</span></div>
       </section>
       <section
@@ -615,10 +805,11 @@ function App() {
         onPointerCancel={endDrag}
         onPointerLeave={() => { if (level.action === 'scan') setScanPoint(null); }}
       >
+        <div className="scene-background" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }} aria-hidden="true"/>
         <div className="scene-glow"/><MainIllustration level={level} progress={displayProgress} hitTargets={hitTargets} itemCount={visualItemCount} selectedTool={selectedTool} showMemory={showMemory} hintedTarget={hintedTarget} rotateTurns={rotateTurns} onTarget={handleTarget}/>
         {observation && <div className={`clean-status process-stage-${observation.stage}`}><span className={`process-sample sample-${observation.sample}`}><i/><i/><i/></span><div><small>{observation.label}</small><b>{observation.text}</b></div></div>}
         {level.action === 'swipe' && selectedTool && <div className={`swipe-hint ${progress > 10 ? 'faded' : ''}`}><span>☝</span>来回滑动</div>}
-        {level.action === 'hold' && <button className={`hold-control ${isHolding ? 'holding' : ''}`} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold} disabled={!selectedTool || completed}><span style={{ '--hold-progress': `${displayProgress}%` }}><Play fill="currentColor"/></span><b>{isHolding ? '机器运行中…' : selectedTool ? '按住启动' : '先选择启动钥匙'}</b><small>{displayProgress}%</small></button>}
+        {level.action === 'hold' && <button className={`hold-control ${isHolding ? 'holding' : ''}`} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold} disabled={!selectedTool || completed}><span style={{ '--hold-progress': `${displayProgress}%` }}><Play fill="currentColor"/></span><b>{isHolding ? '机器运行中…' : selectedTool ? '按住启动' : '先选择启动按钮'}</b><small>{displayProgress}%</small></button>}
         {level.action === 'rotate' && <div className={`rotate-control ${isDragging ? 'rotating' : ''} ${assistActive ? 'assisted' : ''}`} aria-hidden="true"><div><Gauge/><span>↻</span></div><b>{selectedTool ? `顺时针转动 · 目标 ${rotateTurns} 圈` : '先选择温度旋钮'}</b></div>}
         {level.action === 'timing' && <div className={`timing-game ${assistActive ? 'assisted' : ''}`}><div className="timing-copy"><b>{assistActive ? '辅助节奏' : '快节奏交接'}</b><span>已完成 {Math.round(progress)} / {level.goal}</span></div><div ref={timingTrackRef} className="timing-track"><i className="timing-safe" style={{ left: `${50 - timingHalfWidth}%`, width: `${timingHalfWidth * 2}%` }}/><strong style={{ left: `${timingValue}%` }}/></div><button onPointerDown={handleTiming} onClick={(event) => { if (event.detail === 0) handleTiming(); }} disabled={!selectedTool}>现在交接！</button></div>}
         {isDragging && dragPoint && selectedTool && (
@@ -632,19 +823,22 @@ function App() {
         {message && <div className="toast-message" role="status" aria-live="polite">{message}</div>}
       </section>
       <section className="tool-dock" aria-label="工具栏">
-        <div className={`dock-title ${selectedTool ? 'ready' : ''}`}><span>{selectedTool ? '第 2 步 · 去上方动手操作' : '第 1 步 · 选择正确工具'}</span><button onClick={() => setShowHelp(true)}><CircleHelp/>怎么做</button></div>
-        <div className="tools-row">
+        <div className={`dock-title ${selectedTool ? 'ready' : ''}`}><span>{selectedTool ? '第 2 步 · 去上方完成操作' : level.tools.length > 1 ? '第 1 步 · 选择正确工具' : '第 1 步 · 拿取本步骤工具'}</span><button onClick={() => setShowHelp(true)}><CircleHelp/>怎么做</button></div>
+        <div className={`tools-row ${level.tools.length === 1 ? 'single-tool' : ''}`}>
           {level.tools.map(tool => <button key={tool} aria-pressed={selectedTool === tool} className={`tool-button ${selectedTool === tool ? 'selected' : ''} ${wrongTool === tool ? 'wrong' : ''} ${assistActive && tool === level.correct ? 'hinted' : ''}`} onClick={() => chooseTool(tool)}><span className="tool-result" aria-hidden="true">{wrongTool === tool ? '×' : selectedTool === tool ? '✓' : ''}</span><span className="tool-art"><ToolIcon name={tool}/><i/></span><b>{toolData[tool][0]}</b></button>)}
         </div>
       </section>
-      {completed && <div className="completion-overlay"><Confetti/><div className="completion-card"><div className="heart-pop"><Heart fill="currentColor"/></div><h2>太棒啦！</h2><p>“{level.title}”完成</p><div className="stars-earned"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div><div className="knowledge-earned"><Sparkles/><span><b>本关知识</b>{levelFacts[levelIndex]}</span></div><button className="primary-button" onClick={nextLevel}>{levelIndex === levels.length - 1 ? '领取消毒师奖章' : '下一项任务'} <ChevronRight/></button></div></div>}
+      {completed && !cinematicTransition && (levelIndex === levels.length - 1
+        ? <div className="completion-overlay"><Confetti/><div className="completion-card"><div className="heart-pop"><Heart fill="currentColor"/></div><h2>太棒啦！</h2><p>“{level.title}”完成</p><div className="stars-earned"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div><div className="knowledge-earned"><Sparkles/><span><b>本关知识</b>{levelFacts[levelIndex]}</span></div><button className="primary-button" onClick={nextLevel}>领取消毒师奖章 <ChevronRight/></button></div></div>
+        : <div className="film-completion"><div className="film-completion-image" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }}/><div className="film-completion-shade"/><div className="film-completion-copy"><span>SCENE {String(levelIndex + 1).padStart(2, '0')} · COMPLETE</span><h2>{level.title}</h2><p>{levelFacts[levelIndex]}</p><div className="film-completion-stars"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div><button onClick={nextLevel}>进入下一幕 <ChevronRight/></button></div></div>)}
+      {cinematicTransition && <CinematicTransition {...cinematicTransition} onSkip={finishCinematicTransition}/>} 
       {showHelp && <HelpModal level={level} onClose={() => setShowHelp(false)} />}
     </main>
   );
 }
 
 function HelpModal({ level, onClose }) {
-  return <div className="modal-backdrop" role="dialog" aria-modal="true"><div className="help-modal"><button className="modal-close" onClick={onClose}><X/></button><div className="help-icon"><CircleHelp/></div><h2>{level ? '这一关怎么玩？' : '欢迎来到消毒岛'}</h2><p>{level ? level.guide : '每一关先选择正确工具，再按照提示点击或滑动。完成 12 项任务，就能成为金牌小小消毒师！'}</p><div className="help-steps"><span><b>1</b>看提示</span><span><b>2</b>选工具</span><span><b>3</b>动手做</span></div><button className="primary-button" onClick={onClose}>我知道啦</button></div></div>;
+  return <div className="modal-backdrop" role="dialog" aria-modal="true"><div className="help-modal"><button className="modal-close" onClick={onClose}><X/></button><div className="help-icon"><CircleHelp/></div><h2>{level ? '这一关怎么玩？' : '欢迎来到金牌消毒员训练室'}</h2><p>{level ? level.guide : '每一关使用本步骤指定的牙科器械处理工具，依序完成 13 个规范流程。'}</p><div className="help-steps"><span><b>1</b>看提示</span><span><b>2</b>拿工具</span><span><b>3</b>完成操作</span></div><button className="primary-button" onClick={onClose}>我知道啦</button></div></div>;
 }
 
 export default App;
