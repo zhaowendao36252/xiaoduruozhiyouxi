@@ -3,8 +3,10 @@ import pretreatmentBackground from './assets/scene-backgrounds/01-pretreatment.j
 import sortingBackground from './assets/scene-backgrounds/02-sorting.jpg';
 import ultrasonicBackground from './assets/scene-backgrounds/03-ultrasonic.jpg';
 import rinsingBackground from './assets/scene-backgrounds/04-rinsing.jpg';
+import finalRinseBackground from './assets/scene-backgrounds/04-final-rinse.jpg';
 import washerBackground from './assets/scene-backgrounds/05-washer.jpg';
 import dryingBackground from './assets/scene-backgrounds/06-drying.jpg';
+import airDryBackground from './assets/scene-backgrounds/06-air-dry.jpg';
 import oilingBackground from './assets/scene-backgrounds/07-oiling.jpg';
 import inspectionBackground from './assets/scene-backgrounds/08-inspection.jpg';
 import packagingBackground from './assets/scene-backgrounds/09-packaging.jpg';
@@ -18,17 +20,19 @@ import {
   SprayCan, Star, ThermometerSun, X,
 } from 'lucide-react';
 
+const narrationPreloadCache = new Map();
+
 const levels = [
-  { title: '器械预处理', short: '预处理', prompt: '选择正确工具：使用棉球处理器械表面可见污渍。', guide: '选择棉球，在器械表面来回擦拭', scene: 'table', action: 'swipe', goal: 100, correct: 'cotton', tools: ['cotton', 'towel', 'brush'], stars: 3, narrationTrack: 1 },
-  { title: '转运分类', short: '分类', prompt: '选择正确容器：将牙科器械逐件分类放入密闭转运盒。', guide: '选择密闭转运盒，依次放入分类后的器械', scene: 'sort', action: 'targets', goal: 5, correct: 'box', tools: ['basket', 'box', 'bag'], stars: 3, narrationTrack: 2 },
+  { title: '器械预处理', short: '预处理', prompt: '选择正确工具：使用棉球处理器械表面可见污渍。', guide: '选择棉球，在器械表面来回擦拭', scene: 'table', action: 'swipe', goal: 100, correct: 'cotton', tools: ['cotton', 'towel', 'brush'], stars: 3, narrationTrack: 2 },
+  { title: '转运分类', short: '分类', prompt: '选择正确容器：将牙科器械逐件分类放入密闭转运盒。', guide: '选择密闭转运盒，依次放入分类后的器械', scene: 'sort', action: 'targets', goal: 5, correct: 'box', tools: ['basket', 'box', 'bag'], stars: 3, narrationTrack: 4 },
   { title: '超声酶洗', short: '酶洗', prompt: '选择正确清洗剂：加入多酶液，以震荡模式进行超声酶洗。', guide: '选择多酶液，在超声清洗机内完成酶洗', scene: 'ultrasonic', action: 'swipe', goal: 100, correct: 'enzyme', tools: ['water', 'enzyme', 'soap'], stars: 3, narrationTrack: 3 },
-  { title: '流动水冲洗', short: '冲洗', prompt: '选择正确工具：使用流动水冲洗器械表面和缝隙。', guide: '选择高压冲洗枪，在器械上来回冲洗', scene: 'sink', action: 'swipe', goal: 100, correct: 'hose', tools: ['hose', 'cup', 'towel'], stars: 3, narrationTrack: 4 },
-  { title: '终末漂洗', short: '终末漂洗', prompt: '选择正确用水：使用纯水漂洗。', guide: '选择纯水，在终末漂洗槽内完成漂洗', scene: 'finalRinse', action: 'swipe', goal: 100, correct: 'pureWater', tools: ['pureWater', 'brush', 'fan'], stars: 3, narrationTrack: 5 },
+  { title: '流动水冲洗', short: '冲洗', prompt: '选择正确工具：使用流动水冲洗器械表面和缝隙。', guide: '选择高压水枪，持续冲洗器械表面和缝隙', scene: 'sink', action: 'swipe', goal: 100, correct: 'hose', tools: ['hose', 'cup', 'towel'], stars: 3, narrationTrack: 5 },
+  { title: '终末漂洗', short: '终末漂洗', prompt: '选择正确用水：使用纯水漂洗。', guide: '选择纯水，在终末漂洗槽内完成漂洗', scene: 'finalRinse', action: 'swipe', goal: 100, correct: 'pureWater', tools: ['pureWater', 'brush', 'fan'], stars: 3, narrationTrack: 1 },
   { title: '吹干', short: '吹干', prompt: '选择正确工具：使用气枪吹走水珠。', guide: '选择气枪，在器械表面和缝隙来回吹干', scene: 'airDry', action: 'swipe', goal: 100, correct: 'fan', tools: ['towel', 'fan', 'water'], stars: 3, narrationTrack: 6 },
   { title: '注油', short: '注油', prompt: '选择专用设备：往牙科手机内注入润滑油。', guide: '选择手机注油机，依次连接牙科手机接口', scene: 'oil', action: 'targets', goal: 5, correct: 'oil', tools: ['enzyme', 'oil', 'soap'], stars: 3, narrationTrack: 7 },
-  { title: '清洗消毒', short: '清洗消毒', prompt: '放好器械，按住按键，启动清洗消毒机器，等待程序全部完成。', guide: '放好器械，按住启动按钮，等待清洗消毒程序全部完成', scene: 'washer', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3, narrationTrack: 9 },
+  { title: '干燥', short: '干燥', prompt: '放置烘干箱进行干燥。', guide: '放置烘干箱进行干燥，按住启动按钮等待程序完成', scene: 'dry', action: 'hold', goal: 100, correct: 'key', tools: ['key', 'brush', 'fan'], stars: 3, narrationTrack: 13 },
   { title: '检查', short: '检查', prompt: '选择正确工具：使用放大镜检查器械清洁状况。', guide: '选择放大镜，移动扫描检查 5 个区域', scene: 'inspect', action: 'scan', goal: 5, correct: 'glass', tools: ['glass', 'lamp', 'towel'], stars: 3, narrationTrack: 8 },
-  { title: '包装', short: '包装', prompt: '选择正确设备：将器械装入纸塑袋，并进行热封。', guide: '选择封口机，按顺序完成 4 个器械包热封', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'sealer', tools: ['box', 'sealer', 'basket'], stars: 3, advanced: true, narrationTrack: 9 },
+  { title: '包装', short: '包装', prompt: '选择正确设备：将器械装入纸塑袋进行热封。', guide: '选择封口机，按顺序完成 4 个器械包热封', scene: 'pack', action: 'ordered', order: [0, 2, 1, 3], goal: 4, correct: 'sealer', tools: ['box', 'sealer', 'basket'], stars: 3, advanced: true, narrationTrack: 9 },
   { title: '灭菌', short: '灭菌', prompt: '选择正确控制项：将封装器械放入压力蒸汽灭菌器。', guide: '选择温度旋钮，顺时针启动灭菌程序', scene: 'sterilize', action: 'rotate', turns: 3, goal: 100, correct: 'dial', tools: ['dial', 'key', 'hose'], stars: 3, advanced: true, narrationTrack: 10 },
   { title: '储存', short: '储存', prompt: '选择正确位置：将已灭菌器械包分类放入无菌储存柜。', guide: '选择无菌储存柜，按亮起的标签顺序入柜', scene: 'storage', action: 'memory', order: [4, 1, 5, 0, 3, 2], goal: 6, correct: 'cabinet', tools: ['basket', 'cabinet', 'box'], stars: 3, advanced: true, narrationTrack: 11 },
   { title: '发放', short: '发放', prompt: '选择正确容器：按照需求，进行器械发放。', guide: '选择洁净发放托盘，在正确时机完成交接', scene: 'issue', action: 'timing', goal: 4, correct: 'tray', tools: ['tray', 'pouch', 'bag'], stars: 3, advanced: true, narrationTrack: 12 },
@@ -40,8 +44,10 @@ const sceneBackgrounds = {
   ultrasonic: ultrasonicBackground,
   sink: rinsingBackground,
   washer: washerBackground,
-  finalRinse: rinsingBackground,
-  airDry: rinsingBackground,
+  // Flow-rinse uses the rinsing-room background; final rinse has its own
+  // dedicated reference image.
+  finalRinse: finalRinseBackground,
+  airDry: airDryBackground,
   dry: dryingBackground,
   oil: oilingBackground,
   inspect: inspectionBackground,
@@ -80,11 +86,10 @@ const levelFacts = [
   '预处理阶段使用棉球处理可见污渍，避免污染物干结。',
   '污染器械应分类后置于密闭转运盒，减少交叉污染。',
   '多酶液配合震荡模式，可清洁器械细小缝隙。',
-  '流动水冲洗能够带走松动的污物和清洗液残留。',
   '终末漂洗使用纯水，减少清洗剂和水垢残留。',
   '气枪吹干可去除器械缝隙和管腔中的水珠。',
   '牙科手机需通过专用注油设备完成润滑保养。',
-  '清洗消毒机按程序完成清洗消毒，完成后再进入后续处理。',
+  '放置烘干箱进行干燥，程序完成后再进入后续处理。',
   '放大检查有助于发现肉眼不易察觉的残留。',
   '纸塑袋热封后可在灭菌过程及后续储存中保护器械。',
   '压力蒸汽灭菌需满足规定的温度、压力和时间。',
@@ -137,6 +142,50 @@ const toolData = {
   lamp: ['小台灯', ThermometerSun], pouch: ['包装袋', PackageCheck], sealer: ['封口机', Settings], dial: ['温度旋钮', Gauge],
   cabinet: ['储存柜', Archive], tray: ['发放托盘', InspectionPanel],
 };
+
+function formatCopy(text) {
+  if (!text) return null;
+  const chars = Array.from(text);
+  const lineWidth = 15;
+  // Short task prompts should remain a complete sentence on one line when
+  // the card has enough room; this prevents a dangling break before the
+  // final action phrase (for example, the 16-character drying prompt).
+  if (chars.length <= lineWidth + 1) return <span className="copy-line copy-line-single">{text}</span>;
+  const remainder = chars.length % lineWidth;
+  const lineCount = remainder > 5 ? Math.floor(chars.length / lineWidth) + 1 : Math.ceil(chars.length / lineWidth);
+  const lengths = Array(lineCount).fill(Math.floor(chars.length / lineCount));
+  let extra = chars.length % lineCount;
+  for (let i = 0; i < extra; i += 1) lengths[i] += 1;
+  let cursor = 0;
+  const lineTexts = lengths.map((length) => {
+    const line = chars.slice(cursor, cursor + length).join('');
+    cursor += length;
+    return line;
+  });
+  const leadingPunctuation = /^[，。！？；：、,.!?;:）》】”’）\]}」』》〉]/;
+  for (let i = 1; i < lineTexts.length; i += 1) {
+    while (leadingPunctuation.test(lineTexts[i]) && lineTexts[i].length > 0) {
+      lineTexts[i - 1] += lineTexts[i][0];
+      lineTexts[i] = lineTexts[i].slice(1);
+    }
+  }
+  return lineTexts.map((line, index) => {
+    return <span key={`${line}-${index}`} className={`copy-line ${remainder > 5 && index === lineTexts.length - 1 ? 'copy-line-orphan' : ''}`}>{line}</span>;
+  });
+}
+
+function formatHelperCopy(text) {
+  if (!text) return null;
+  const chars = Array.from(text);
+  const lineWidth = 15;
+  if (chars.length <= lineWidth) return <span className="copy-line copy-line-single">{text}</span>;
+  const lines = [];
+  for (let i = 0; i < chars.length; i += lineWidth) lines.push(chars.slice(i, i + lineWidth).join(''));
+  if (lines.length === 2 && lines[1].length <= 4) {
+    return <span className="copy-line copy-line-single compact-helper">{text}</span>;
+  }
+  return lines.slice(0, 2).map((line, index) => <span key={`${line}-${index}`} className="copy-line">{line}</span>);
+}
 
 function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory, hinted, onActivate, className = '', style = {} }) {
   const orderNumber = order.indexOf(index) + 1;
@@ -279,7 +328,7 @@ function MainIllustration({ level, progress, hitTargets, itemCount, selectedTool
     <div className="basin-scene ultra" aria-hidden="true"><div className="basin-rim"><Instrument type={0} progress={cleanAmount}/><Instrument type={1} progress={cleanAmount}/><div className="water-waves">〰 〰 〰</div></div><div className="basin-base">ULTRA</div></div>
   );
   if (level.scene === 'sink') return (
-    <div className="basin-scene sink" aria-hidden="true"><div className="faucet"><span/></div><div className="basin-rim"><Instrument type={0} clean/><Instrument type={2} clean/><div className="water-waves">〰 〰</div><div className="rinse-residue" style={{ opacity: Math.max(0, 1 - cleanAmount / 100) }}><i/><i/><i/><i/><i/></div></div></div>
+    <div className="basin-scene sink" aria-hidden="true"><div className="faucet"><span/></div><div className="basin-rim"><Instrument type={0} clean/><Instrument type={2} clean/><div className="water-waves">〰 〰</div></div></div>
   );
   if (level.scene === 'dry') return (
     <div className="dry-scene" aria-hidden="true"><div className="air-lines">〰 〰 〰</div><Instrument type={0} clean/><Instrument type={2} clean/><span className="drop d1" style={{ opacity: Math.max(0, 1 - cleanAmount / 35) }}/><span className="drop d2" style={{ opacity: Math.max(0, 1 - cleanAmount / 68) }}/><span className="drop d3" style={{ opacity: Math.max(0, 1 - cleanAmount / 100) }}/></div>
@@ -337,7 +386,7 @@ function CinematicTransition({ fromIndex, toIndex, onSkip }) {
 }
 
 function App() {
-  // The revised 13-step workflow has different ordering from the earlier demo.
+  // The revised 12-step workflow has different ordering from the earlier demo.
   // Keep a separate version marker so old saved progress cannot unlock later steps.
   const workflowVersion = 'gold-sterilizer-v2';
   const hasCurrentWorkflow = localStorage.getItem('clean-game-workflow-version') === workflowVersion;
@@ -371,6 +420,8 @@ function App() {
   const timingCanScore = useRef(true);
   const timingTrackRef = useRef(null);
   const narrationStartTimer = useRef(null);
+  const narrationRetryTimer = useRef(null);
+  const narrationNeedsGesture = useRef(false);
   const narrationAudioRef = useRef(null);
   const cinematicTimer = useRef(null);
   useEffect(() => {
@@ -444,11 +495,16 @@ function App() {
       window.clearTimeout(narrationStartTimer.current);
       narrationStartTimer.current = null;
     }
+    if (narrationRetryTimer.current) {
+      window.clearTimeout(narrationRetryTimer.current);
+      narrationRetryTimer.current = null;
+    }
     if (narrationAudioRef.current) {
       narrationAudioRef.current.pause();
       narrationAudioRef.current.currentTime = 0;
       narrationAudioRef.current = null;
     }
+    narrationNeedsGesture.current = false;
   }, []);
 
   const speak = useCallback(() => {
@@ -456,20 +512,91 @@ function App() {
     const track = level.narrationTrack;
     if (!track || !soundOn) return;
     const narrationNumber = String(track).padStart(2, '0');
-    const audio = new Audio(`${import.meta.env.BASE_URL}audio/narration-${narrationNumber}.mp3`);
+    const audioUrl = `${import.meta.env.BASE_URL}audio/narration-${narrationNumber}.mp3`;
+    const audio = narrationPreloadCache.get(audioUrl) || new Audio(audioUrl);
+    audio.currentTime = 0;
     audio.preload = 'auto';
+    audio.autoplay = true;
     audio.volume = 1;
     audio.onended = () => playSpriteChime('outro');
-    audio.onerror = () => { narrationAudioRef.current = null; };
-    narrationAudioRef.current = audio;
-    playSpriteChime('intro');
-    narrationStartTimer.current = window.setTimeout(() => {
-      narrationStartTimer.current = null;
+    let attempts = 0;
+    narrationNeedsGesture.current = false;
+    const retryPlay = () => {
+      if (narrationAudioRef.current !== audio || !soundOn || attempts >= 2) return;
+      attempts += 1;
+      audio.load();
       audio.play().catch(() => {
-        narrationAudioRef.current = null;
+        narrationNeedsGesture.current = true;
+        if (attempts < 2 && narrationAudioRef.current === audio) {
+          narrationRetryTimer.current = window.setTimeout(() => {
+            narrationRetryTimer.current = null;
+            retryPlay();
+          }, 420);
+        }
       });
-    }, soundOn ? 260 : 0);
+    };
+    audio.onerror = () => {
+      narrationNeedsGesture.current = true;
+      if (attempts < 2 && narrationAudioRef.current === audio) {
+        narrationRetryTimer.current = window.setTimeout(() => {
+          narrationRetryTimer.current = null;
+          retryPlay();
+        }, 420);
+      }
+    };
+    narrationAudioRef.current = audio;
+    audio.load();
+    playSpriteChime('intro');
+    // Attempt immediately; do not intentionally delay or gate autoplay.
+    retryPlay();
   }, [level.narrationTrack, playSpriteChime, soundOn, stopNarration]);
+
+  // Warm the browser cache for every level so manual chapter selection does
+  // not wait for a network fetch before narration starts.
+  useEffect(() => {
+    if (!soundOn) return;
+    const upcomingLevels = [levels[levelIndex], levels[levelIndex + 1]];
+    upcomingLevels.forEach(({ narrationTrack } = {}) => {
+      if (!narrationTrack) return;
+      const number = String(narrationTrack).padStart(2, '0');
+      const url = `${import.meta.env.BASE_URL}audio/narration-${number}.mp3`;
+      if (narrationPreloadCache.has(url)) return;
+      const audio = new Audio(url);
+      audio.preload = 'auto';
+      audio.setAttribute('playsinline', 'true');
+      narrationPreloadCache.set(url, audio);
+      audio.load();
+    });
+  }, [soundOn, levelIndex]);
+
+  // Keep remote/mobile previews responsive: preload only the current scene and
+  // the next likely scene instead of requesting every large background at once.
+  useEffect(() => {
+    const sources = [sceneBackgrounds[levels[levelIndex]?.scene], sceneBackgrounds[levels[levelIndex + 1]?.scene]];
+    sources.forEach((source) => {
+      if (!source) return;
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = source;
+    });
+  }, [levelIndex]);
+
+  // Mobile browsers may reject autoplay until the user interacts with the
+  // page. Resume the pending narration on the first touch or key press.
+  useEffect(() => {
+    const resumeNarration = () => {
+      if (!soundOn || !narrationNeedsGesture.current || !narrationAudioRef.current) return;
+      const audio = narrationAudioRef.current;
+      narrationNeedsGesture.current = false;
+      audio.play().catch(() => { narrationNeedsGesture.current = true; });
+    };
+    window.addEventListener('pointerdown', resumeNarration, { passive: true });
+    window.addEventListener('keydown', resumeNarration);
+    return () => {
+      window.removeEventListener('pointerdown', resumeNarration);
+      window.removeEventListener('keydown', resumeNarration);
+    };
+  }, [soundOn]);
 
   // Keep exactly one narration active. Changing a selected level, leaving the
   // game, or turning sound off cancels the previous level before the next one
@@ -644,6 +771,9 @@ function App() {
   const startHold = (e) => {
     e.stopPropagation();
     if (!selectedTool || completed || isHolding) return;
+    if (e.pointerId !== undefined && e.currentTarget.setPointerCapture) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
     setIsHolding(true); playTone('tap');
     window.clearInterval(holdTimer.current);
     holdTimer.current = window.setInterval(() => setProgress(value => {
@@ -724,7 +854,7 @@ function App() {
         <p className="eyebrow">互动科普展 · DENTAL CLEAN TEAM</p>
         <h1>小小金牌消毒员</h1>
         <p className="hero-subtitle">器械大冒险</p>
-        <div className="hero-badges"><span><Sparkles/>13 个任务</span><span><Star/>边玩边学</span><span><Droplets/>观察流程变化</span></div>
+        <div className="hero-badges"><span><Sparkles/>{levels.length} 个任务</span><span><Star/>边玩边学</span><span><Droplets/>观察流程变化</span></div>
         <button className="primary-button" onClick={() => startAt(Math.min(levelIndex, levels.length - 1))}><Play fill="currentColor"/>开始冒险</button>
         {earnedStars > 0 && <button className="text-button" onClick={() => setScreen('map')}>查看闯关地图 <ChevronRight/></button>}
       </section>
@@ -759,8 +889,7 @@ function App() {
       <div className="progress-track" aria-label={`任务进度 ${displayProgress}%`}><span style={{ width: `${displayProgress}%` }}/><b>{displayProgress}%</b><i><Star fill="currentColor"/></i></div>
       <section className="task-card">
         <div className="helper-avatar"><ShieldCheck/><span>•ᴗ•</span></div>
-        <div className="task-copy"><p>{level.prompt}</p><small>{assistActive ? (assistCopy[level.scene] || '小助手已开启：当前必做设备已高亮，操作范围也更宽松') : selectedTool ? level.guide : level.tools.length > 1 ? '先从下方选择正确工具' : '从下方拿取本步骤必做工具'}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
-        <div className={`challenge-level ${level.advanced ? 'advanced' : ''}`} aria-label={`挑战难度 ${challengeRank} 星`}><b>{level.advanced ? '进阶区' : '挑战'}</b><span>{[1,2,3].map(rank => <i key={rank} className={rank <= challengeRank ? 'on' : ''}>★</i>)}</span></div>
+        <div className="task-copy"><p>{formatHelperCopy(level.prompt)}</p><small>{formatHelperCopy(assistActive ? (assistCopy[level.scene] || '小助手已开启：当前必做设备已高亮，操作范围也更宽松') : selectedTool ? level.guide : level.tools.length > 1 ? '先从下方选择正确工具' : '从下方拿取本步骤必做工具')}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
       </section>
       <section
         className={`play-zone ${selectedTool ? 'tool-active' : ''}`}
@@ -783,11 +912,12 @@ function App() {
         onPointerCancel={endDrag}
         onPointerLeave={() => { if (level.action === 'scan') setScanPoint(null); }}
       >
+        <div className={`challenge-level scene-challenge ${level.advanced ? 'advanced' : ''}`} aria-label={`挑战难度 ${challengeRank} 星`}><b>{level.advanced ? '进阶区' : '挑战'}</b><span>{[1,2,3].map(rank => <i key={rank} className={rank <= challengeRank ? 'on' : ''}>★</i>)}</span></div>
         <div className="scene-background" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }} aria-hidden="true"/>
-        <div className="scene-glow"/><MainIllustration level={level} progress={displayProgress} hitTargets={hitTargets} itemCount={visualItemCount} selectedTool={selectedTool} showMemory={showMemory} hintedTarget={hintedTarget} rotateTurns={rotateTurns} onTarget={handleTarget}/>
+        <div className="scene-glow"/><MainIllustration key={levelIndex} level={level} progress={displayProgress} hitTargets={hitTargets} itemCount={visualItemCount} selectedTool={selectedTool} showMemory={showMemory} hintedTarget={hintedTarget} rotateTurns={rotateTurns} onTarget={handleTarget}/>
         {observation && <div className={`clean-status process-stage-${observation.stage}`}><span className={`process-sample sample-${observation.sample}`}><i/><i/><i/></span><div><small>{observation.label}</small><b>{observation.text}</b></div></div>}
         {level.action === 'swipe' && selectedTool && <div className={`swipe-hint ${progress > 10 ? 'faded' : ''}`}><span>☝</span>来回滑动</div>}
-        {level.action === 'hold' && <button className={`hold-control ${isHolding ? 'holding' : ''}`} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold} disabled={!selectedTool || completed}><span style={{ '--hold-progress': `${displayProgress}%` }}><Play fill="currentColor"/></span><b>{isHolding ? '机器运行中…' : selectedTool ? '按住启动' : '先选择启动按钮'}</b><small>{displayProgress}%</small></button>}
+        {level.action === 'hold' && <button className={`hold-control ${isHolding ? 'holding' : ''}`} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} disabled={!selectedTool || completed}><span style={{ '--hold-progress': `${displayProgress}%` }}><Play fill="currentColor"/></span><b>{isHolding ? '机器运行中…' : selectedTool ? '按住启动' : '先选择启动按钮'}</b><small>{displayProgress}%</small></button>}
         {level.action === 'rotate' && <div className={`rotate-control ${isDragging ? 'rotating' : ''} ${assistActive ? 'assisted' : ''}`} aria-hidden="true"><div><Gauge/><span>↻</span></div><b>{selectedTool ? `顺时针转动 · 目标 ${rotateTurns} 圈` : '先选择温度旋钮'}</b></div>}
         {level.action === 'timing' && <div className={`timing-game ${assistActive ? 'assisted' : ''}`}><div className="timing-copy"><b>{assistActive ? '辅助节奏' : '快节奏交接'}</b><span>已完成 {Math.round(progress)} / {level.goal}</span></div><div ref={timingTrackRef} className="timing-track"><i className="timing-safe" style={{ left: `${50 - timingHalfWidth}%`, width: `${timingHalfWidth * 2}%` }}/><strong style={{ left: `${timingValue}%` }}/></div><button onPointerDown={handleTiming} onClick={(event) => { if (event.detail === 0) handleTiming(); }} disabled={!selectedTool}>现在交接！</button></div>}
         {isDragging && dragPoint && selectedTool && (
@@ -816,7 +946,7 @@ function App() {
 }
 
 function HelpModal({ level, onClose }) {
-  return <div className="modal-backdrop" role="dialog" aria-modal="true"><div className="help-modal"><button className="modal-close" onClick={onClose}><X/></button><div className="help-icon"><CircleHelp/></div><h2>{level ? '这一关怎么玩？' : '欢迎来到金牌消毒员训练室'}</h2><p>{level ? level.guide : '每一关使用本步骤指定的牙科器械处理工具，依序完成 13 个规范流程。'}</p><div className="help-steps"><span><b>1</b>看提示</span><span><b>2</b>拿工具</span><span><b>3</b>完成操作</span></div><button className="primary-button" onClick={onClose}>我知道啦</button></div></div>;
+  return <div className="modal-backdrop" role="dialog" aria-modal="true"><div className="help-modal"><button className="modal-close" onClick={onClose}><X/></button><div className="help-icon"><CircleHelp/></div><h2>{level ? '这一关怎么玩？' : '欢迎来到金牌消毒员训练室'}</h2><p>{level ? level.guide : `每一关使用本步骤指定的牙科器械处理工具，依序完成 ${levels.length} 个规范流程。`}</p><div className="help-steps"><span><b>1</b>看提示</span><span><b>2</b>拿工具</span><span><b>3</b>完成操作</span></div><button className="primary-button" onClick={onClose}>我知道啦</button></div></div>;
 }
 
 export default App;
