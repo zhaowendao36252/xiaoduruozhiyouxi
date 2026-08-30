@@ -415,6 +415,9 @@ function App() {
   const [completed, setCompleted] = useState(false);
   const [cinematicTransition, setCinematicTransition] = useState(null);
   const [earnedStars, setEarnedStars] = useState(() => hasCurrentWorkflow ? Number(localStorage.getItem('clean-game-stars') || 0) : 0);
+  const [levelStars, setLevelStars] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('clean-game-level-stars') || '[]'); } catch { return []; }
+  });
   const [showAchievements, setShowAchievements] = useState(false);
   const [achievementIds, setAchievementIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('clean-game-achievements') || '[]'); } catch { return []; }
@@ -644,11 +647,16 @@ function App() {
       if (totalErrors === 0) unlocked.push('zero-errors');
     }
     if (unlocked.length) unlockAchievements(unlocked);
-    const nextStars = Math.max(earnedStars, (levelIndex + 1) * 3);
+    const starsForLevel = Math.max(1, 3 - Math.min(2, mistakes));
+    const nextLevelStars = [...levelStars];
+    nextLevelStars[levelIndex] = Math.max(nextLevelStars[levelIndex] || 0, starsForLevel);
+    const nextStars = nextLevelStars.reduce((sum, value) => sum + value, 0);
+    setLevelStars(nextLevelStars);
     setEarnedStars(nextStars);
     localStorage.setItem('clean-game-stars', String(nextStars));
+    localStorage.setItem('clean-game-level-stars', JSON.stringify(nextLevelStars));
     localStorage.setItem('clean-game-level', String(Math.min(levels.length - 1, levelIndex + 1)));
-  }, [completed, earnedStars, level.goal, levelIndex, mistakes, perfectStreak, runErrors, playTone, unlockAchievements]);
+  }, [completed, earnedStars, level.goal, levelIndex, levelStars, mistakes, perfectStreak, runErrors, playTone, unlockAchievements]);
 
   useEffect(() => {
     if (['targets', 'ordered', 'scan', 'memory'].includes(level.action) && hitTargets.length >= level.goal) finishLevel();
@@ -899,8 +907,9 @@ function App() {
       <header className="map-header"><button className="round-button" onClick={() => setScreen('home')}><Home/></button><div><p>消毒岛地图</p><h2>选择任务</h2></div><button className="star-total" onClick={() => setShowAchievements(true)} aria-label="查看成就"><Star fill="currentColor"/> {earnedStars}</button></header>
       <div className="level-map">
         {levels.map((item, i) => {
-          const unlocked = i === 0 || earnedStars >= i * 3;
-          return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{unlocked ? (earnedStars >= (i + 1) * 3 ? '★★★' : item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁'}</small></span></button></Fragment>;
+          const unlocked = i === 0 || Boolean(levelStars[i - 1]);
+          const rating = levelStars[i] ? '★'.repeat(levelStars[i]) : '';
+          return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{rating || (unlocked ? (item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁')}</small></span></button></Fragment>;
         })}
       </div>
       {showAchievements && <AchievementModal unlocked={achievementIds} onClose={() => setShowAchievements(false)} />}
@@ -969,8 +978,8 @@ function App() {
         </div>
       </section>
       {completed && !cinematicTransition && (levelIndex === levels.length - 1
-        ? <div className="completion-overlay"><Confetti/><div className="completion-card"><div className="heart-pop"><Heart fill="currentColor"/></div><h2>太棒啦！</h2><p>“{level.title}”完成</p><div className="stars-earned"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div><div className="knowledge-earned"><Sparkles/><span><b>本关知识</b>{levelFacts[levelIndex]}</span></div><button className="primary-button" onClick={nextLevel}>领取消毒师奖章 <ChevronRight/></button></div></div>
-        : <div className="film-completion"><div className="film-completion-image" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }}/><div className="film-completion-shade"/><div className="film-completion-copy"><span>SCENE {String(levelIndex + 1).padStart(2, '0')} · COMPLETE</span><h2>{level.title}</h2><p>{levelFacts[levelIndex]}</p><div className="film-completion-stars"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div><button onClick={nextLevel}>进入下一幕 <ChevronRight/></button></div></div>)}
+        ? <div className="completion-overlay"><Confetti/><div className="completion-card"><div className="heart-pop"><Heart fill="currentColor"/></div><h2>太棒啦！</h2><p>“{level.title}”完成</p><div className="stars-earned">{Array.from({ length: 3 }, (_, index) => <Star key={index} fill={index < (levelStars[levelIndex] || 1) ? 'currentColor' : 'none'}/>)}</div><div className="knowledge-earned"><Sparkles/><span><b>本关知识</b>{levelFacts[levelIndex]}</span></div><button className="primary-button" onClick={nextLevel}>领取消毒师奖章 <ChevronRight/></button></div></div>
+        : <div className="film-completion"><div className="film-completion-image" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }}/><div className="film-completion-shade"/><div className="film-completion-copy"><span>SCENE {String(levelIndex + 1).padStart(2, '0')} · COMPLETE</span><h2>{level.title}</h2><p>{levelFacts[levelIndex]}</p><div className="film-completion-stars">{Array.from({ length: 3 }, (_, index) => <Star key={index} fill={index < (levelStars[levelIndex] || 1) ? 'currentColor' : 'none'}/>)}</div><button onClick={nextLevel}>进入下一幕 <ChevronRight/></button></div></div>)}
       {cinematicTransition && <CinematicTransition {...cinematicTransition} onSkip={finishCinematicTransition}/>} 
       {showHelp && <HelpModal level={level} onClose={() => setShowHelp(false)} />}
     </main>
