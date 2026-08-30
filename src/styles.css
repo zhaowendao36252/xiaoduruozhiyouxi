@@ -304,3 +304,20 @@ button:focus-visible { outline: 4px solid rgba(255, 177, 71, .5); outline-offset
 .achievement-item b, .achievement-item small { display: block; }
 .achievement-item small { margin-top: .15rem; color: #6d8b91; font-size: .78rem; }
 .achievement-item.unlocked small { color: #96733f; }
+.app-shell { background: linear-gradient(180deg,#bff7ff 0%,#fff1b8 52%,#ffd4ec 100%); }
+.home-screen { background: radial-gradient(circle at 18% 18%,#fff 0 8%,transparent 24%), linear-gradient(135deg,#55d9f2 0%,#b8f5d5 48%,#ffd27d 100%); }
+.task-card { background: linear-gradient(135deg,rgba(255,255,255,.98),rgba(255,246,210,.96)); border-color: #fff; box-shadow: 0 10px 0 rgba(255,166,91,.22),0 18px 34px rgba(50,136,160,.16); }
+.tool-button { background: linear-gradient(145deg,#edffff,#fff2cf); border-color: rgba(255,255,255,.8); box-shadow: 0 6px 0 #b6dcd4,0 10px 20px rgba(45,145,160,.12); }
+.tool-button:nth-child(3n+1) .tool-art { color:#ff6f91; }
+.tool-button:nth-child(3n+2) .tool-art { color:#ffad42; }
+.tool-button:nth-child(3n) .tool-art { color:#38bde0; }
+.tool-button:hover .tool-art, .tool-button.selected .tool-art { animation: playfulNudge .65s ease-in-out infinite alternate; filter: drop-shadow(0 5px 8px rgba(255,139,66,.35)); }
+.action-target { background: linear-gradient(145deg,#fff5a8,#ff9ecb) !important; border-color:#fff !important; color:#f05b87 !important; box-shadow:0 5px 0 #e67caa,0 8px 14px rgba(240,91,135,.28) !important; }
+.action-target:not(.hit):not(.memorizing) { animation: playfulNudge 1.5s ease-in-out infinite; }
+.target-icon svg { width: 22px; height: 22px; }
+.cinematic-stars-art { position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; mix-blend-mode:screen; opacity:.78; animation: starsPop 6.5s ease both; pointer-events:none; }
+.cinematic-tooth-guide { position:absolute; right:5%; bottom:12%; z-index:13; width:min(34%,170px); max-height:43%; object-fit:contain; filter:drop-shadow(0 12px 12px rgba(0,0,0,.3)); animation: guideBounce 1.5s ease-in-out infinite alternate; }
+.tooth-guide-image { position:absolute; right:24px; bottom:-16px; width:78px; height:78px; object-fit:contain; filter:drop-shadow(0 6px 5px rgba(24,118,147,.25)); animation: guideBounce 1.7s ease-in-out infinite alternate; pointer-events:none; }
+@keyframes playfulNudge { from { transform:translateY(0) rotate(-2deg); } to { transform:translateY(-4px) rotate(2deg); } }
+@keyframes guideBounce { from { transform:translateY(3px) rotate(-3deg); } to { transform:translateY(-7px) rotate(3deg); } }
+@keyframes starsPop { 0%,100%{opacity:.35;transform:scale(1)} 35%{opacity:.9;transform:scale(1.05)} }

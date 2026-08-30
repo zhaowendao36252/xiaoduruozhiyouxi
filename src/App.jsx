@@ -13,6 +13,8 @@ import packagingBackground from './assets/scene-backgrounds/09-packaging.jpg';
 import sterilizationBackground from './assets/scene-backgrounds/10-sterilization.jpg';
 import storageBackground from './assets/scene-backgrounds/11-storage.jpg';
 import dispatchBackground from './assets/scene-backgrounds/12-dispatch.jpg';
+import toothGuideImage from './assets/ui/tooth-guide.png';
+import transitionStarsImage from './assets/ui/transition-stars.png';
 import {
   Archive, BadgeCheck, Box, ChevronRight, CircleHelp, Droplets,
   Gauge, Heart, Home, InspectionPanel, KeyRound, PackageCheck, Play,
@@ -194,6 +196,7 @@ function formatHelperCopy(text) {
 
 function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory, hinted, onActivate, className = '', style = {} }) {
   const orderNumber = order.indexOf(index) + 1;
+  const actionIcon = action === 'scan' ? <Search/> : action === 'rotate' ? <Gauge/> : action === 'hold' ? <Play fill="currentColor"/> : action === 'timing' ? <ChevronRight/> : action === 'targets' ? <Box/> : <Droplets/>;
   return (
     <button
       type="button"
@@ -204,7 +207,7 @@ function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory
       style={{ '--memory-order': order.indexOf(index), ...style }}
       onClick={action === 'scan' ? undefined : () => onActivate(index)}
     >
-      <span>{hit ? '✓' : action === 'ordered' ? orderNumber : action === 'memory' && showMemory ? orderNumber : action === 'scan' ? <Search/> : selectedTool ? '＋' : '?'}</span>
+      <span className="target-icon">{hit ? <Sparkles fill="currentColor"/> : action === 'ordered' ? orderNumber : action === 'memory' && showMemory ? orderNumber : actionIcon}</span>
     </button>
   );
 }
@@ -366,20 +369,22 @@ function CinematicTransition({ fromIndex, toIndex, onSkip }) {
       <div className="cinematic-scene cinematic-scene-to" style={{ backgroundImage: `url(${sceneBackgrounds[toLevel.scene]})` }}/>
       <div className="cinematic-vignette"/>
       <div className="cinematic-grain"/>
+      <img className="cinematic-stars-art" src={transitionStarsImage} alt="" aria-hidden="true" />
+      <img className="cinematic-tooth-guide" src={toothGuideImage} alt="牙齿精灵导游" />
       <div className="cinematic-light"/>
       <div className="cinematic-flash"/>
       <div className="cinematic-letterbox cinematic-letterbox-top"/>
       <div className="cinematic-letterbox cinematic-letterbox-bottom"/>
       <section className="cinematic-copy cinematic-copy-from">
         <span>SCENE {String(fromIndex + 1).padStart(2, '0')} · COMPLETE</span>
-        <h2>{fromLevel.title}</h2>
+        <h2>恭喜你过关啦！</h2>
         <i/>
         <p>本工作区任务完成</p>
       </section>
       <section className="cinematic-copy cinematic-copy-to">
         <span>NEXT WORK AREA</span>
-        <p>沿洁净流程继续前行</p>
-        <h2>{toLevel.title}</h2>
+        <p>即将进入下一关 · {toLevel.title}</p>
+        <h2>继续挑战</h2>
         <i/>
         <small>任务 {toIndex + 1} / {levels.length}</small>
       </section>
@@ -930,6 +935,7 @@ function App() {
       <div className="progress-track" aria-label={`任务进度 ${displayProgress}%`}><span style={{ width: `${displayProgress}%` }}/><b>{displayProgress}%</b><i><Star fill="currentColor"/></i></div>
       <section className="task-card">
         <div className="helper-avatar"><ShieldCheck/><span>•ᴗ•</span></div>
+        <img className="tooth-guide-image" src={toothGuideImage} alt="牙齿精灵导游" />
         <div className="task-copy"><p>{formatHelperCopy(level.prompt)}</p><small>{formatHelperCopy(assistActive ? (assistCopy[level.scene] || '小助手已开启：当前必做设备已高亮，操作范围也更宽松') : selectedTool ? level.guide : level.tools.length > 1 ? '先从下方选择正确工具' : '从下方拿取本步骤必做工具')}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
       </section>
       <section
