@@ -15,6 +15,17 @@ import storageBackground from './assets/scene-backgrounds/11-storage.jpg';
 import dispatchBackground from './assets/scene-backgrounds/12-dispatch.jpg';
 import toothGuideImage from './assets/ui/tooth-guide.png';
 import transitionStarsImage from './assets/ui/transition-stars.png';
+
+const transitionStarFrames = Object.entries(import.meta.glob('./assets/ui/transition-stars-frames/frame_*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+  .map(([, url]) => url);
+const toothGuideFrames = Object.entries(import.meta.glob('./assets/ui/tooth-guide-frames/牙齿欢呼*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+  .map(([, url]) => url);
+const toothGuideVariantA = Object.entries(import.meta.glob('./assets/ui/tooth-guide-frames/variant-a/牙齿欢呼*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([, url]) => url);
+const toothGuideVariantB = Object.entries(import.meta.glob('./assets/ui/tooth-guide-frames/variant-b/牙齿欢呼*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([, url]) => url);
 import {
   Archive, BadgeCheck, Box, ChevronRight, CircleHelp, Droplets,
   Gauge, Heart, Home, InspectionPanel, KeyRound, PackageCheck, Play,
@@ -23,6 +34,7 @@ import {
 } from 'lucide-react';
 
 const narrationPreloadCache = new Map();
+const transitionPreloadCache = new Map();
 const achievementCatalog = [
   { id: 'zero-errors', title: '零错误通关', description: '一次完整流程中没有发生错误操作。' },
   { id: 'full-batch', title: '完整处理一批器械', description: '完成 13 个任务，走完一批器械的处理流程。' },
@@ -149,6 +161,25 @@ const toolData = {
   lamp: ['小台灯', ThermometerSun], pouch: ['包装袋', PackageCheck], sealer: ['封口机', Settings], dial: ['温度旋钮', Gauge],
   cabinet: ['储存柜', Archive], tray: ['发放托盘', InspectionPanel],
 };
+
+// Light, high-key tints keep the clean medical atmosphere while giving each
+// chapter a recognizable visual identity.  The colors are deliberately soft
+// so the reference artwork and interaction targets remain the focus.
+const levelThemes = [
+  { wash: '#c9f3f7', accent: '#49c6d5', deep: '#247c98', glow: '#dffbff' },
+  { wash: '#c9f5ed', accent: '#52cba3', deep: '#277f77', glow: '#e2fff4' },
+  { wash: '#d6edff', accent: '#5da9ed', deep: '#2c6599', glow: '#edf7ff' },
+  { wash: '#d2f5f0', accent: '#4fc7b5', deep: '#287e78', glow: '#e8fffb' },
+  { wash: '#d9f0ff', accent: '#6aaee8', deep: '#326b99', glow: '#eff8ff' },
+  { wash: '#dff4ff', accent: '#65b9e2', deep: '#2d718d', glow: '#f0fbff' },
+  { wash: '#e6f1ff', accent: '#809de8', deep: '#485e9c', glow: '#f2f5ff' },
+  { wash: '#e3f5ed', accent: '#62c795', deep: '#347d65', glow: '#f0fff6' },
+  { wash: '#fff2d9', accent: '#f2b65b', deep: '#996a31', glow: '#fff9e9' },
+  { wash: '#fff0dc', accent: '#ed9a61', deep: '#9a5a36', glow: '#fff8ed' },
+  { wash: '#e9e5ff', accent: '#9c8be8', deep: '#5d4d99', glow: '#f5f2ff' },
+  { wash: '#e8f4e3', accent: '#84bf68', deep: '#4d7f43', glow: '#f4fff0' },
+  { wash: '#ffe8ef', accent: '#ec91ad', deep: '#98506b', glow: '#fff3f7' },
+];
 
 function formatCopy(text) {
   if (!text) return null;
@@ -360,6 +391,17 @@ function Confetti() {
   return <div className="confetti" aria-hidden="true">{Array.from({ length: 22 }, (_, i) => <i key={i} style={{ '--i': i }} />)}</div>;
 }
 
+function SequenceFrame({ frames, fallback, interval = 120, className, alt = '', ...props }) {
+  const [frameIndex, setFrameIndex] = useState(0);
+  useEffect(() => {
+    if (!frames?.length) return undefined;
+    frames.forEach((src) => { const image = new Image(); image.src = src; });
+    const timer = window.setInterval(() => setFrameIndex((index) => (index + 1) % frames.length), interval);
+    return () => window.clearInterval(timer);
+  }, [frames, interval]);
+  return <img className={className} src={frames?.[frameIndex] || fallback} alt={alt} {...props} />;
+}
+
 function CinematicTransition({ fromIndex, toIndex, onSkip }) {
   const fromLevel = levels[fromIndex];
   const toLevel = levels[toIndex];
@@ -369,8 +411,8 @@ function CinematicTransition({ fromIndex, toIndex, onSkip }) {
       <div className="cinematic-scene cinematic-scene-to" style={{ backgroundImage: `url(${sceneBackgrounds[toLevel.scene]})` }}/>
       <div className="cinematic-vignette"/>
       <div className="cinematic-grain"/>
-      <img className="cinematic-stars-art" src={transitionStarsImage} alt="" aria-hidden="true" />
-      <img className="cinematic-tooth-guide" src={toothGuideImage} alt="牙齿精灵导游" />
+      <SequenceFrame className="cinematic-stars-art" frames={transitionStarFrames} fallback={transitionStarsImage} interval={115} alt="" aria-hidden="true" />
+      <SequenceFrame className="cinematic-tooth-guide" frames={(fromIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB).length ? (fromIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB) : toothGuideFrames} fallback={toothGuideImage} interval={95} alt="牙齿精灵导游" />
       <div className="cinematic-light"/>
       <div className="cinematic-flash"/>
       <div className="cinematic-letterbox cinematic-letterbox-top"/>
@@ -382,9 +424,9 @@ function CinematicTransition({ fromIndex, toIndex, onSkip }) {
         <p>本工作区任务完成</p>
       </section>
       <section className="cinematic-copy cinematic-copy-to">
-        <span>NEXT WORK AREA</span>
+        <span>继续挑战</span>
+        <h2>{toLevel.title}</h2>
         <p>即将进入下一关 · {toLevel.title}</p>
-        <h2>继续挑战</h2>
         <i/>
         <small>任务 {toIndex + 1} / {levels.length}</small>
       </section>
@@ -442,6 +484,7 @@ function App() {
   const narrationRetryTimer = useRef(null);
   const narrationNeedsGesture = useRef(false);
   const narrationAudioRef = useRef(null);
+  const transitionAudioRef = useRef(null);
   const cinematicTimer = useRef(null);
   useEffect(() => {
     localStorage.setItem('clean-game-workflow-version', workflowVersion);
@@ -533,6 +576,31 @@ function App() {
     narrationNeedsGesture.current = false;
   }, []);
 
+  const stopTransitionAudio = useCallback(() => {
+    if (transitionAudioRef.current) {
+      transitionAudioRef.current.pause();
+      transitionAudioRef.current.currentTime = 0;
+      transitionAudioRef.current = null;
+    }
+  }, []);
+
+  const playTransitionAudio = useCallback((fromIndex) => {
+    stopTransitionAudio();
+    if (!soundOn || fromIndex < 0 || fromIndex >= levels.length - 1) return;
+    const number = String(fromIndex + 1).padStart(2, '0');
+    const audioUrl = `${import.meta.env.BASE_URL}audio/transition-${number}.mp3`;
+    const audio = transitionPreloadCache.get(audioUrl) || new Audio(audioUrl);
+    audio.currentTime = 0;
+    audio.preload = 'auto';
+    audio.setAttribute('playsinline', 'true');
+    audio.volume = 1;
+    transitionAudioRef.current = audio;
+    audio.play().catch(() => {
+      // The transition is entered from a button/touch, so this is only a
+      // fallback for a host that temporarily rejects media playback.
+    });
+  }, [soundOn, stopTransitionAudio]);
+
   const speak = useCallback(() => {
     stopNarration();
     const track = level.narrationTrack;
@@ -593,6 +661,17 @@ function App() {
       narrationPreloadCache.set(url, audio);
       audio.load();
     });
+    if (levelIndex < levels.length - 1) {
+      const number = String(levelIndex + 1).padStart(2, '0');
+      const url = `${import.meta.env.BASE_URL}audio/transition-${number}.mp3`;
+      if (!transitionPreloadCache.has(url)) {
+        const audio = new Audio(url);
+        audio.preload = 'auto';
+        audio.setAttribute('playsinline', 'true');
+        transitionPreloadCache.set(url, audio);
+        audio.load();
+      }
+    }
   }, [soundOn, levelIndex]);
 
   // Keep remote/mobile previews responsive: preload only the current scene and
@@ -638,6 +717,10 @@ function App() {
       stopNarration();
     };
   }, [screen, levelIndex, soundOn, speak, stopNarration]);
+
+  useEffect(() => {
+    if (!soundOn) stopTransitionAudio();
+  }, [soundOn, stopTransitionAudio]);
 
   const finishLevel = useCallback(() => {
     if (completed) return;
@@ -848,6 +931,7 @@ function App() {
   const finishCinematicTransition = () => {
     if (!cinematicTransition) return;
     window.clearTimeout(cinematicTimer.current);
+    stopTransitionAudio();
     stopNarration();
     setLevelIndex(cinematicTransition.toIndex);
     resetLevel();
@@ -860,8 +944,10 @@ function App() {
     const nextTransition = { fromIndex: levelIndex, toIndex: levelIndex + 1 };
     const transitionDuration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 900 : 6500;
     setCinematicTransition(nextTransition);
+    playTransitionAudio(levelIndex);
     window.clearTimeout(cinematicTimer.current);
     cinematicTimer.current = window.setTimeout(() => {
+      stopTransitionAudio();
       setLevelIndex(nextTransition.toIndex);
       resetLevel();
       setCinematicTransition(null);
@@ -914,7 +1000,8 @@ function App() {
         {levels.map((item, i) => {
           const unlocked = i === 0 || Boolean(levelStars[i - 1]);
           const rating = levelStars[i] ? '★'.repeat(levelStars[i]) : '';
-          return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{rating || (unlocked ? (item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁')}</small></span></button></Fragment>;
+          const theme = levelThemes[i];
+          return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} style={{ '--node-wash': theme.wash, '--node-accent': theme.accent, '--node-deep': theme.deep, '--node-bg': `url(${sceneBackgrounds[item.scene]})` }} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{rating || (unlocked ? (item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁')}</small></span></button></Fragment>;
         })}
       </div>
       {showAchievements && <AchievementModal unlocked={achievementIds} onClose={() => setShowAchievements(false)} />}
@@ -926,7 +1013,15 @@ function App() {
   );
 
   return (
-    <main className={`app-shell game-screen ${level.advanced ? 'advanced-level' : ''} ${completed ? 'level-complete' : ''}`}>
+    <main
+      className={`app-shell game-screen ${level.advanced ? 'advanced-level' : ''} ${completed ? 'level-complete' : ''}`}
+      style={{
+        '--level-wash': levelThemes[levelIndex]?.wash,
+        '--level-accent': levelThemes[levelIndex]?.accent,
+        '--level-deep': levelThemes[levelIndex]?.deep,
+        '--level-glow': levelThemes[levelIndex]?.glow,
+      }}
+    >
       <header className="game-header">
         <button className="round-button" aria-label="返回地图" onClick={() => { stopNarration(); setScreen('map'); }}><Home/></button>
         <div className="level-heading"><span>任务 {levelIndex + 1} / {levels.length}</span><b>{level.title}</b></div>
@@ -960,6 +1055,7 @@ function App() {
         onPointerLeave={() => { if (level.action === 'scan') setScanPoint(null); }}
       >
         <div className={`challenge-level scene-challenge ${level.advanced ? 'advanced' : ''}`} aria-label={`挑战难度 ${challengeRank} 星`}><b>{level.advanced ? '进阶区' : '挑战'}</b><span>{[1,2,3].map(rank => <i key={rank} className={rank <= challengeRank ? 'on' : ''}>★</i>)}</span></div>
+        <SequenceFrame className="chapter-guide-animation" frames={(levelIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB).length ? (levelIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB) : toothGuideFrames} fallback={toothGuideImage} interval={95} alt="牙齿精灵动态导游" aria-hidden="true" />
         <div className="scene-background" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }} aria-hidden="true"/>
         <div className="scene-glow"/><MainIllustration key={levelIndex} level={level} progress={displayProgress} hitTargets={hitTargets} itemCount={visualItemCount} selectedTool={selectedTool} showMemory={showMemory} hintedTarget={hintedTarget} rotateTurns={rotateTurns} onTarget={handleTarget}/>
         {observation && <div className={`clean-status process-stage-${observation.stage}`}><span className={`process-sample sample-${observation.sample}`}><i/><i/><i/></span><div><small>{observation.label}</small><b>{observation.text}</b></div></div>}
