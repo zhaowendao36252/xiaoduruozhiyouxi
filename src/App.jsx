@@ -21,6 +21,11 @@ import {
 } from 'lucide-react';
 
 const narrationPreloadCache = new Map();
+const achievementCatalog = [
+  { id: 'zero-errors', title: '零错误通关', description: '一次完整流程中没有发生错误操作。' },
+  { id: 'full-batch', title: '完整处理一批器械', description: '完成 13 个任务，走完一批器械的处理流程。' },
+  { id: 'three-perfect', title: '连续三关满星', description: '连续三关无错误完成，保持满星表现。' },
+];
 
 const levels = [
   { title: '器械预处理', short: '预处理', prompt: '选择正确工具：使用棉球处理器械表面可见污渍。', guide: '选择棉球，在器械表面来回擦拭', scene: 'table', action: 'swipe', goal: 100, correct: 'cotton', tools: ['cotton', 'towel', 'brush'], stars: 3, narrationTrack: 2 },
@@ -410,6 +415,12 @@ function App() {
   const [completed, setCompleted] = useState(false);
   const [cinematicTransition, setCinematicTransition] = useState(null);
   const [earnedStars, setEarnedStars] = useState(() => hasCurrentWorkflow ? Number(localStorage.getItem('clean-game-stars') || 0) : 0);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [achievementIds, setAchievementIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('clean-game-achievements') || '[]'); } catch { return []; }
+  });
+  const [runErrors, setRunErrors] = useState(0);
+  const [perfectStreak, setPerfectStreak] = useState(0);
   const lastPoint = useRef(null);
   const cleaningMarkId = useRef(0);
   const holdTimer = useRef(null);
@@ -428,6 +439,13 @@ function App() {
     localStorage.setItem('clean-game-workflow-version', workflowVersion);
   }, []);
   const level = levels[levelIndex];
+  const unlockAchievements = useCallback((ids) => {
+    setAchievementIds((current) => {
+      const next = [...new Set([...current, ...ids])];
+      localStorage.setItem('clean-game-achievements', JSON.stringify(next));
+      return next;
+    });
+  }, []);
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
   const scanRadius = assistActive ? 76 : mistakes === 1 ? 64 : 54;
@@ -616,11 +634,21 @@ function App() {
   const finishLevel = useCallback(() => {
     if (completed) return;
     setCompleted(true); setProgress(level.goal); playTone('win');
+    const nextStreak = mistakes === 0 ? perfectStreak + 1 : 0;
+    setPerfectStreak(nextStreak);
+    const totalErrors = runErrors + mistakes;
+    const unlocked = [];
+    if (nextStreak >= 3) unlocked.push('three-perfect');
+    if (levelIndex === levels.length - 1) {
+      unlocked.push('full-batch');
+      if (totalErrors === 0) unlocked.push('zero-errors');
+    }
+    if (unlocked.length) unlockAchievements(unlocked);
     const nextStars = Math.max(earnedStars, (levelIndex + 1) * 3);
     setEarnedStars(nextStars);
     localStorage.setItem('clean-game-stars', String(nextStars));
     localStorage.setItem('clean-game-level', String(Math.min(levels.length - 1, levelIndex + 1)));
-  }, [completed, earnedStars, level.goal, levelIndex, playTone]);
+  }, [completed, earnedStars, level.goal, levelIndex, mistakes, perfectStreak, runErrors, playTone, unlockAchievements]);
 
   useEffect(() => {
     if (['targets', 'ordered', 'scan', 'memory'].includes(level.action) && hitTargets.length >= level.goal) finishLevel();
@@ -654,6 +682,7 @@ function App() {
 
   const startAt = (index) => {
     stopNarration();
+    if (index === 0) { setRunErrors(0); setPerfectStreak(0); }
     setLevelIndex(index); setScreen('game');
     setTimeout(resetLevel, 0);
   };
@@ -662,7 +691,7 @@ function App() {
     if (completed) return;
     if (tool !== level.correct) {
       const nextMistakes = mistakes + 1;
-      setMistakes(nextMistakes);
+      setMistakes(nextMistakes); setRunErrors(value => value + 1);
       setWrongTool(tool);
       setMessage(nextMistakes >= 2 ? `小提示：找一找“${toolData[level.correct][0]}”` : '这个工具不合适，再观察一下！'); playTone('wrong');
       setTimeout(() => setWrongTool(current => current === tool ? null : current), 650);
@@ -685,7 +714,7 @@ function App() {
     if (level.action === 'memory' && showMemory) return;
     if (['ordered', 'memory'].includes(level.action) && idx !== level.order[hitTargets.length]) {
       const nextMistakes = mistakes + 1;
-      setMistakes(nextMistakes); playTone('wrong');
+      setMistakes(nextMistakes); setRunErrors(value => value + 1); playTone('wrong');
       if (level.action === 'ordered') {
         setMessage(nextMistakes >= 2 ? '顺序不对，看发光的下一步！' : `请先完成编号 ${hitTargets.length + 1}！`);
         setTimeout(() => setMessage(''), 1400);
@@ -741,7 +770,7 @@ function App() {
           reverseTravel.current += Math.abs(delta);
           if (reverseTravel.current > .45) {
             rotationWarned.current = true;
-            setMistakes(value => value + 1); setMessage('方向反啦，请跟着 ↻ 顺时针转动！'); playTone('wrong');
+            setMistakes(value => value + 1); setRunErrors(value => value + 1); setMessage('方向反啦，请跟着 ↻ 顺时针转动！'); playTone('wrong');
             setTimeout(() => setMessage(''), 1500);
           }
         }
@@ -798,7 +827,7 @@ function App() {
       setMessage('下一件无菌包正在准备中…');
     } else {
       const nextMistakes = mistakes + 1;
-      setMistakes(nextMistakes); setMessage(nextMistakes >= 2 ? '小助手已放宽绿色区并降低速度！' : '再等等，游标进入绿色区再交接！'); playTone('wrong');
+      setMistakes(nextMistakes); setRunErrors(value => value + 1); setMessage(nextMistakes >= 2 ? '小助手已放宽绿色区并降低速度！' : '再等等，游标进入绿色区再交接！'); playTone('wrong');
     }
     setTimeout(() => setMessage(''), 900);
   };
@@ -857,21 +886,24 @@ function App() {
         <div className="hero-badges"><span><Sparkles/>{levels.length} 个任务</span><span><Star/>边玩边学</span><span><Droplets/>观察流程变化</span></div>
         <button className="primary-button" onClick={() => startAt(Math.min(levelIndex, levels.length - 1))}><Play fill="currentColor"/>开始冒险</button>
         {earnedStars > 0 && <button className="text-button" onClick={() => setScreen('map')}>查看闯关地图 <ChevronRight/></button>}
+        <button className="text-button achievement-link" onClick={() => setShowAchievements(true)}>查看成就 ({achievementIds.length}/{achievementCatalog.length})</button>
       </section>
       <div className="home-instruments"><Instrument type={0}/><Instrument type={1}/><Instrument type={2}/></div>
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showAchievements && <AchievementModal unlocked={achievementIds} onClose={() => setShowAchievements(false)} />}
     </main>
   );
 
   if (screen === 'map') return (
     <main className="app-shell map-screen">
-      <header className="map-header"><button className="round-button" onClick={() => setScreen('home')}><Home/></button><div><p>消毒岛地图</p><h2>选择任务</h2></div><div className="star-total"><Star fill="currentColor"/> {earnedStars}</div></header>
+      <header className="map-header"><button className="round-button" onClick={() => setScreen('home')}><Home/></button><div><p>消毒岛地图</p><h2>选择任务</h2></div><button className="star-total" onClick={() => setShowAchievements(true)} aria-label="查看成就"><Star fill="currentColor"/> {earnedStars}</button></header>
       <div className="level-map">
         {levels.map((item, i) => {
           const unlocked = i === 0 || earnedStars >= i * 3;
           return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{unlocked ? (earnedStars >= (i + 1) * 3 ? '★★★' : item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁'}</small></span></button></Fragment>;
         })}
       </div>
+      {showAchievements && <AchievementModal unlocked={achievementIds} onClose={() => setShowAchievements(false)} />}
     </main>
   );
 
@@ -943,6 +975,10 @@ function App() {
       {showHelp && <HelpModal level={level} onClose={() => setShowHelp(false)} />}
     </main>
   );
+}
+
+function AchievementModal({ unlocked, onClose }) {
+  return <div className="modal-backdrop" role="dialog" aria-modal="true"><div className="help-modal achievement-modal"><button className="modal-close" onClick={onClose}><X/></button><div className="help-icon"><Star fill="currentColor"/></div><h2>消毒员成就</h2><p>在规范流程中挑战自己的最佳表现。</p><div className="achievement-list">{achievementCatalog.map((item) => <div key={item.id} className={`achievement-item ${unlocked.includes(item.id) ? 'unlocked' : ''}`}><span>{unlocked.includes(item.id) ? '★' : '☆'}</span><div><b>{item.title}</b><small>{item.description}</small></div></div>)}</div><button className="primary-button" onClick={onClose}>继续训练</button></div></div>;
 }
 
 function HelpModal({ level, onClose }) {

@@ -295,3 +295,12 @@ button:focus-visible { outline: 4px solid rgba(255, 177, 71, .5); outline-offset
 .mini-pouch .action-target.hit{animation:pouchPop .3s ease}
 @keyframes pouchPulse{50%{transform:scale(1.11)}}
 @keyframes pouchPop{50%{transform:scale(1.35)}}
+.achievement-link { margin-top: .35rem; }
+.achievement-modal { max-width: 30rem; }
+.achievement-list { display: grid; gap: .65rem; margin: 1rem 0 1.25rem; text-align: left; }
+.achievement-item { display: flex; align-items: center; gap: .75rem; padding: .7rem .8rem; border-radius: 1rem; background: rgba(224,239,239,.65); color: #7b969b; }
+.achievement-item.unlocked { background: linear-gradient(135deg, #fff4c7, #fff9e8); color: #a56b15; box-shadow: 0 0 0 2px rgba(245,190,63,.25); }
+.achievement-item > span { font-size: 1.8rem; line-height: 1; }
+.achievement-item b, .achievement-item small { display: block; }
+.achievement-item small { margin-top: .15rem; color: #6d8b91; font-size: .78rem; }
+.achievement-item.unlocked small { color: #96733f; }
