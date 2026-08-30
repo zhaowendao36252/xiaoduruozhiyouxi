@@ -212,6 +212,75 @@ button:focus-visible { outline: 4px solid rgba(255, 177, 71, .5); outline-offset
 @media (max-width: 420px) { .task-card{padding-inline:12px;gap:10px;grid-template-columns:44px minmax(0,1fr) auto}.task-card p{margin-inline:8px;font-size:14px;line-height:1.35}.task-card small{margin-inline:8px;font-size:11px;line-height:1.4}.challenge-level{padding-inline:6px;transform:scale(.9);transform-origin:top right} }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important} }
 
+/* Per-level color identity: a restrained pastel wash and matching accents
+   make chapters feel distinct without changing the game's clean clinical mood. */
+.game-screen {
+  background: linear-gradient(180deg, var(--level-wash, #c7f1f8) 0 26%, #f7fbf8 55%, #eff7f2);
+}
+.game-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 27%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--level-glow, #e6ffff) 82%, transparent), transparent 68%);
+  opacity: .72;
+}
+.game-screen .level-heading span { color: color-mix(in srgb, var(--level-deep, #4a91a7) 72%, #fff); }
+.game-screen .level-heading b { color: var(--level-deep, #27556c); }
+.game-screen .progress-track>span { background: linear-gradient(90deg, color-mix(in srgb, var(--level-accent, #49c6d5) 72%, #fff), #ffb45a); }
+.game-screen .progress-track i { color: var(--level-accent, #ffc13d); }
+.game-screen .helper-avatar { background: linear-gradient(145deg, color-mix(in srgb, var(--level-accent, #83e5ef) 72%, #fff), var(--level-accent, #4ec1df)); }
+.game-screen .task-card { box-shadow: 0 8px 22px color-mix(in srgb, var(--level-accent, #23738b) 15%, transparent); }
+.game-screen .scene-glow { background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--level-glow, #e6ffff) 60%, transparent), transparent 72%); }
+.game-screen .tool-button.selected { border-color: var(--level-accent, #55c8dd); background: color-mix(in srgb, var(--level-glow, #e5fbff) 78%, #fff); }
+.game-screen .dock-title.ready>span { color: var(--level-deep, #238b82); }
+
+/* The guide lives in the marked upper-left breathing room of the play zone.
+   It sits above the artwork and may overlap only the edge of the lower panel. */
+.chapter-guide-animation {
+  position: absolute;
+  left: auto;
+  right: 16%;
+  top: 14px;
+  z-index: 9;
+  width: clamp(132px, 35vw, 190px);
+  max-height: 42%;
+  object-fit: contain;
+  opacity: .96;
+  filter: drop-shadow(0 10px 10px rgba(24, 91, 112, .22));
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Chapter map cards now carry the scene they open, instead of floating as
+   unrelated white strips.  A soft wash keeps labels readable over every image. */
+.map-node {
+  overflow: hidden;
+  isolation: isolate;
+  background-color: var(--node-wash, #fff);
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--node-wash, #fff) 91%, transparent), color-mix(in srgb, var(--node-wash, #fff) 66%, transparent)), var(--node-bg);
+  background-position: center;
+  background-size: cover;
+  border: 3px solid rgba(255,255,255,.92);
+  box-shadow: 0 8px 0 color-mix(in srgb, var(--node-accent, #c8ded8) 52%, #c8ded8), 0 12px 20px rgba(42,114,122,.11);
+}
+.map-node::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--node-wash, #fff) 64%, transparent), transparent 68%);
+  pointer-events: none;
+}
+.map-node .node-number,
+.map-node .node-copy { position: relative; z-index: 1; }
+.map-node .node-number {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--node-accent, #62d2e6) 82%, #fff), var(--node-deep, #2287a4));
+}
+.map-node .node-copy b { color: var(--node-deep, #315d70); text-shadow: 0 1px 0 rgba(255,255,255,.8); }
+.map-node .node-copy small { color: color-mix(in srgb, var(--node-deep, #f3af35) 78%, #d89032); }
+
 /* Briefly show the work-position hint, then let the reference image breathe. */
 .reference-model-title{animation:referenceHintFade 5.5s ease-in-out .8s forwards}
 @keyframes referenceHintFade{0%,42%{opacity:1}72%{opacity:.38}100%{opacity:.14}}
@@ -295,3 +364,29 @@ button:focus-visible { outline: 4px solid rgba(255, 177, 71, .5); outline-offset
 .mini-pouch .action-target.hit{animation:pouchPop .3s ease}
 @keyframes pouchPulse{50%{transform:scale(1.11)}}
 @keyframes pouchPop{50%{transform:scale(1.35)}}
+.achievement-link { margin-top: .35rem; }
+.achievement-modal { max-width: 30rem; }
+.achievement-list { display: grid; gap: .65rem; margin: 1rem 0 1.25rem; text-align: left; }
+.achievement-item { display: flex; align-items: center; gap: .75rem; padding: .7rem .8rem; border-radius: 1rem; background: rgba(224,239,239,.65); color: #7b969b; }
+.achievement-item.unlocked { background: linear-gradient(135deg, #fff4c7, #fff9e8); color: #a56b15; box-shadow: 0 0 0 2px rgba(245,190,63,.25); }
+.achievement-item > span { font-size: 1.8rem; line-height: 1; }
+.achievement-item b, .achievement-item small { display: block; }
+.achievement-item small { margin-top: .15rem; color: #6d8b91; font-size: .78rem; }
+.achievement-item.unlocked small { color: #96733f; }
+.app-shell { background: linear-gradient(180deg,#bff7ff 0%,#fff1b8 52%,#ffd4ec 100%); }
+.home-screen { background: radial-gradient(circle at 18% 18%,#fff 0 8%,transparent 24%), linear-gradient(135deg,#55d9f2 0%,#b8f5d5 48%,#ffd27d 100%); }
+.task-card { background: linear-gradient(135deg,rgba(255,255,255,.98),rgba(255,246,210,.96)); border-color: #fff; box-shadow: 0 10px 0 rgba(255,166,91,.22),0 18px 34px rgba(50,136,160,.16); }
+.tool-button { background: linear-gradient(145deg,#edffff,#fff2cf); border-color: rgba(255,255,255,.8); box-shadow: 0 6px 0 #b6dcd4,0 10px 20px rgba(45,145,160,.12); }
+.tool-button:nth-child(3n+1) .tool-art { color:#ff6f91; }
+.tool-button:nth-child(3n+2) .tool-art { color:#ffad42; }
+.tool-button:nth-child(3n) .tool-art { color:#38bde0; }
+.tool-button:hover .tool-art, .tool-button.selected .tool-art { animation: playfulNudge .65s ease-in-out infinite alternate; filter: drop-shadow(0 5px 8px rgba(255,139,66,.35)); }
+.action-target { background: linear-gradient(145deg,#fff5a8,#ff9ecb) !important; border-color:#fff !important; color:#f05b87 !important; box-shadow:0 5px 0 #e67caa,0 8px 14px rgba(240,91,135,.28) !important; }
+.action-target:not(.hit):not(.memorizing) { animation: playfulNudge 1.5s ease-in-out infinite; }
+.target-icon svg { width: 22px; height: 22px; }
+.cinematic-stars-art { position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; mix-blend-mode:screen; opacity:.78; animation: starsPop 6.5s ease both; pointer-events:none; }
+.cinematic-tooth-guide { position:absolute; right:5%; bottom:12%; z-index:13; width:min(42%,210px); max-height:53%; object-fit:contain; filter:drop-shadow(0 12px 12px rgba(0,0,0,.3)); animation: guideBounce 1.5s ease-in-out infinite alternate; }
+.tooth-guide-image { position:absolute; right:24px; bottom:-16px; width:78px; height:78px; object-fit:contain; filter:drop-shadow(0 6px 5px rgba(24,118,147,.25)); animation: guideBounce 1.7s ease-in-out infinite alternate; pointer-events:none; }
+@keyframes playfulNudge { from { transform:translateY(0) rotate(-2deg); } to { transform:translateY(-4px) rotate(2deg); } }
+@keyframes guideBounce { from { transform:translateY(3px) rotate(-3deg); } to { transform:translateY(-7px) rotate(3deg); } }
+@keyframes starsPop { 0%,100%{opacity:.35;transform:scale(1)} 35%{opacity:.9;transform:scale(1.05)} }

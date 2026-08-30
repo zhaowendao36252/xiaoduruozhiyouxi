@@ -13,6 +13,19 @@ import packagingBackground from './assets/scene-backgrounds/09-packaging.jpg';
 import sterilizationBackground from './assets/scene-backgrounds/10-sterilization.jpg';
 import storageBackground from './assets/scene-backgrounds/11-storage.jpg';
 import dispatchBackground from './assets/scene-backgrounds/12-dispatch.jpg';
+import toothGuideImage from './assets/ui/tooth-guide.png';
+import transitionStarsImage from './assets/ui/transition-stars.png';
+
+const transitionStarFrames = Object.entries(import.meta.glob('./assets/ui/transition-stars-frames/frame_*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+  .map(([, url]) => url);
+const toothGuideFrames = Object.entries(import.meta.glob('./assets/ui/tooth-guide-frames/牙齿欢呼*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+  .map(([, url]) => url);
+const toothGuideVariantA = Object.entries(import.meta.glob('./assets/ui/tooth-guide-frames/variant-a/牙齿欢呼*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([, url]) => url);
+const toothGuideVariantB = Object.entries(import.meta.glob('./assets/ui/tooth-guide-frames/variant-b/牙齿欢呼*.png', { eager: true, import: 'default', query: '?url' }))
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([, url]) => url);
 import {
   Archive, BadgeCheck, Box, ChevronRight, CircleHelp, Droplets,
   Gauge, Heart, Home, InspectionPanel, KeyRound, PackageCheck, Play,
@@ -21,6 +34,12 @@ import {
 } from 'lucide-react';
 
 const narrationPreloadCache = new Map();
+const transitionPreloadCache = new Map();
+const achievementCatalog = [
+  { id: 'zero-errors', title: '零错误通关', description: '一次完整流程中没有发生错误操作。' },
+  { id: 'full-batch', title: '完整处理一批器械', description: '完成 13 个任务，走完一批器械的处理流程。' },
+  { id: 'three-perfect', title: '连续三关满星', description: '连续三关无错误完成，保持满星表现。' },
+];
 
 const levels = [
   { title: '器械预处理', short: '预处理', prompt: '选择正确工具：使用棉球处理器械表面可见污渍。', guide: '选择棉球，在器械表面来回擦拭', scene: 'table', action: 'swipe', goal: 100, correct: 'cotton', tools: ['cotton', 'towel', 'brush'], stars: 3, narrationTrack: 2 },
@@ -143,6 +162,25 @@ const toolData = {
   cabinet: ['储存柜', Archive], tray: ['发放托盘', InspectionPanel],
 };
 
+// Light, high-key tints keep the clean medical atmosphere while giving each
+// chapter a recognizable visual identity.  The colors are deliberately soft
+// so the reference artwork and interaction targets remain the focus.
+const levelThemes = [
+  { wash: '#c9f3f7', accent: '#49c6d5', deep: '#247c98', glow: '#dffbff' },
+  { wash: '#c9f5ed', accent: '#52cba3', deep: '#277f77', glow: '#e2fff4' },
+  { wash: '#d6edff', accent: '#5da9ed', deep: '#2c6599', glow: '#edf7ff' },
+  { wash: '#d2f5f0', accent: '#4fc7b5', deep: '#287e78', glow: '#e8fffb' },
+  { wash: '#d9f0ff', accent: '#6aaee8', deep: '#326b99', glow: '#eff8ff' },
+  { wash: '#dff4ff', accent: '#65b9e2', deep: '#2d718d', glow: '#f0fbff' },
+  { wash: '#e6f1ff', accent: '#809de8', deep: '#485e9c', glow: '#f2f5ff' },
+  { wash: '#e3f5ed', accent: '#62c795', deep: '#347d65', glow: '#f0fff6' },
+  { wash: '#fff2d9', accent: '#f2b65b', deep: '#996a31', glow: '#fff9e9' },
+  { wash: '#fff0dc', accent: '#ed9a61', deep: '#9a5a36', glow: '#fff8ed' },
+  { wash: '#e9e5ff', accent: '#9c8be8', deep: '#5d4d99', glow: '#f5f2ff' },
+  { wash: '#e8f4e3', accent: '#84bf68', deep: '#4d7f43', glow: '#f4fff0' },
+  { wash: '#ffe8ef', accent: '#ec91ad', deep: '#98506b', glow: '#fff3f7' },
+];
+
 function formatCopy(text) {
   if (!text) return null;
   const chars = Array.from(text);
@@ -189,6 +227,7 @@ function formatHelperCopy(text) {
 
 function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory, hinted, onActivate, className = '', style = {} }) {
   const orderNumber = order.indexOf(index) + 1;
+  const actionIcon = action === 'scan' ? <Search/> : action === 'rotate' ? <Gauge/> : action === 'hold' ? <Play fill="currentColor"/> : action === 'timing' ? <ChevronRight/> : action === 'targets' ? <Box/> : <Droplets/>;
   return (
     <button
       type="button"
@@ -199,7 +238,7 @@ function ActionTarget({ index, action, order = [], selectedTool, hit, showMemory
       style={{ '--memory-order': order.indexOf(index), ...style }}
       onClick={action === 'scan' ? undefined : () => onActivate(index)}
     >
-      <span>{hit ? '✓' : action === 'ordered' ? orderNumber : action === 'memory' && showMemory ? orderNumber : action === 'scan' ? <Search/> : selectedTool ? '＋' : '?'}</span>
+      <span className="target-icon">{hit ? <Sparkles fill="currentColor"/> : action === 'ordered' ? orderNumber : action === 'memory' && showMemory ? orderNumber : actionIcon}</span>
     </button>
   );
 }
@@ -352,6 +391,17 @@ function Confetti() {
   return <div className="confetti" aria-hidden="true">{Array.from({ length: 22 }, (_, i) => <i key={i} style={{ '--i': i }} />)}</div>;
 }
 
+function SequenceFrame({ frames, fallback, interval = 120, className, alt = '', ...props }) {
+  const [frameIndex, setFrameIndex] = useState(0);
+  useEffect(() => {
+    if (!frames?.length) return undefined;
+    frames.forEach((src) => { const image = new Image(); image.src = src; });
+    const timer = window.setInterval(() => setFrameIndex((index) => (index + 1) % frames.length), interval);
+    return () => window.clearInterval(timer);
+  }, [frames, interval]);
+  return <img className={className} src={frames?.[frameIndex] || fallback} alt={alt} {...props} />;
+}
+
 function CinematicTransition({ fromIndex, toIndex, onSkip }) {
   const fromLevel = levels[fromIndex];
   const toLevel = levels[toIndex];
@@ -361,20 +411,22 @@ function CinematicTransition({ fromIndex, toIndex, onSkip }) {
       <div className="cinematic-scene cinematic-scene-to" style={{ backgroundImage: `url(${sceneBackgrounds[toLevel.scene]})` }}/>
       <div className="cinematic-vignette"/>
       <div className="cinematic-grain"/>
+      <SequenceFrame className="cinematic-stars-art" frames={transitionStarFrames} fallback={transitionStarsImage} interval={115} alt="" aria-hidden="true" />
+      <SequenceFrame className="cinematic-tooth-guide" frames={(fromIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB).length ? (fromIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB) : toothGuideFrames} fallback={toothGuideImage} interval={95} alt="牙齿精灵导游" />
       <div className="cinematic-light"/>
       <div className="cinematic-flash"/>
       <div className="cinematic-letterbox cinematic-letterbox-top"/>
       <div className="cinematic-letterbox cinematic-letterbox-bottom"/>
       <section className="cinematic-copy cinematic-copy-from">
         <span>SCENE {String(fromIndex + 1).padStart(2, '0')} · COMPLETE</span>
-        <h2>{fromLevel.title}</h2>
+        <h2>恭喜你过关啦！</h2>
         <i/>
         <p>本工作区任务完成</p>
       </section>
       <section className="cinematic-copy cinematic-copy-to">
-        <span>NEXT WORK AREA</span>
-        <p>沿洁净流程继续前行</p>
+        <span>继续挑战</span>
         <h2>{toLevel.title}</h2>
+        <p>即将进入下一关 · {toLevel.title}</p>
         <i/>
         <small>任务 {toIndex + 1} / {levels.length}</small>
       </section>
@@ -410,6 +462,15 @@ function App() {
   const [completed, setCompleted] = useState(false);
   const [cinematicTransition, setCinematicTransition] = useState(null);
   const [earnedStars, setEarnedStars] = useState(() => hasCurrentWorkflow ? Number(localStorage.getItem('clean-game-stars') || 0) : 0);
+  const [levelStars, setLevelStars] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('clean-game-level-stars') || '[]'); } catch { return []; }
+  });
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [achievementIds, setAchievementIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('clean-game-achievements') || '[]'); } catch { return []; }
+  });
+  const [runErrors, setRunErrors] = useState(0);
+  const [perfectStreak, setPerfectStreak] = useState(0);
   const lastPoint = useRef(null);
   const cleaningMarkId = useRef(0);
   const holdTimer = useRef(null);
@@ -423,11 +484,19 @@ function App() {
   const narrationRetryTimer = useRef(null);
   const narrationNeedsGesture = useRef(false);
   const narrationAudioRef = useRef(null);
+  const transitionAudioRef = useRef(null);
   const cinematicTimer = useRef(null);
   useEffect(() => {
     localStorage.setItem('clean-game-workflow-version', workflowVersion);
   }, []);
   const level = levels[levelIndex];
+  const unlockAchievements = useCallback((ids) => {
+    setAchievementIds((current) => {
+      const next = [...new Set([...current, ...ids])];
+      localStorage.setItem('clean-game-achievements', JSON.stringify(next));
+      return next;
+    });
+  }, []);
   const challengeRank = Math.min(3, 1 + Math.floor(levelIndex / 4));
   const assistActive = mistakes >= 2;
   const scanRadius = assistActive ? 76 : mistakes === 1 ? 64 : 54;
@@ -507,6 +576,31 @@ function App() {
     narrationNeedsGesture.current = false;
   }, []);
 
+  const stopTransitionAudio = useCallback(() => {
+    if (transitionAudioRef.current) {
+      transitionAudioRef.current.pause();
+      transitionAudioRef.current.currentTime = 0;
+      transitionAudioRef.current = null;
+    }
+  }, []);
+
+  const playTransitionAudio = useCallback((fromIndex) => {
+    stopTransitionAudio();
+    if (!soundOn || fromIndex < 0 || fromIndex >= levels.length - 1) return;
+    const number = String(fromIndex + 1).padStart(2, '0');
+    const audioUrl = `${import.meta.env.BASE_URL}audio/transition-${number}.mp3`;
+    const audio = transitionPreloadCache.get(audioUrl) || new Audio(audioUrl);
+    audio.currentTime = 0;
+    audio.preload = 'auto';
+    audio.setAttribute('playsinline', 'true');
+    audio.volume = 1;
+    transitionAudioRef.current = audio;
+    audio.play().catch(() => {
+      // The transition is entered from a button/touch, so this is only a
+      // fallback for a host that temporarily rejects media playback.
+    });
+  }, [soundOn, stopTransitionAudio]);
+
   const speak = useCallback(() => {
     stopNarration();
     const track = level.narrationTrack;
@@ -567,6 +661,17 @@ function App() {
       narrationPreloadCache.set(url, audio);
       audio.load();
     });
+    if (levelIndex < levels.length - 1) {
+      const number = String(levelIndex + 1).padStart(2, '0');
+      const url = `${import.meta.env.BASE_URL}audio/transition-${number}.mp3`;
+      if (!transitionPreloadCache.has(url)) {
+        const audio = new Audio(url);
+        audio.preload = 'auto';
+        audio.setAttribute('playsinline', 'true');
+        transitionPreloadCache.set(url, audio);
+        audio.load();
+      }
+    }
   }, [soundOn, levelIndex]);
 
   // Keep remote/mobile previews responsive: preload only the current scene and
@@ -613,14 +718,33 @@ function App() {
     };
   }, [screen, levelIndex, soundOn, speak, stopNarration]);
 
+  useEffect(() => {
+    if (!soundOn) stopTransitionAudio();
+  }, [soundOn, stopTransitionAudio]);
+
   const finishLevel = useCallback(() => {
     if (completed) return;
     setCompleted(true); setProgress(level.goal); playTone('win');
-    const nextStars = Math.max(earnedStars, (levelIndex + 1) * 3);
+    const nextStreak = mistakes === 0 ? perfectStreak + 1 : 0;
+    setPerfectStreak(nextStreak);
+    const totalErrors = runErrors + mistakes;
+    const unlocked = [];
+    if (nextStreak >= 3) unlocked.push('three-perfect');
+    if (levelIndex === levels.length - 1) {
+      unlocked.push('full-batch');
+      if (totalErrors === 0) unlocked.push('zero-errors');
+    }
+    if (unlocked.length) unlockAchievements(unlocked);
+    const starsForLevel = Math.max(1, 3 - Math.min(2, mistakes));
+    const nextLevelStars = [...levelStars];
+    nextLevelStars[levelIndex] = Math.max(nextLevelStars[levelIndex] || 0, starsForLevel);
+    const nextStars = nextLevelStars.reduce((sum, value) => sum + value, 0);
+    setLevelStars(nextLevelStars);
     setEarnedStars(nextStars);
     localStorage.setItem('clean-game-stars', String(nextStars));
+    localStorage.setItem('clean-game-level-stars', JSON.stringify(nextLevelStars));
     localStorage.setItem('clean-game-level', String(Math.min(levels.length - 1, levelIndex + 1)));
-  }, [completed, earnedStars, level.goal, levelIndex, playTone]);
+  }, [completed, earnedStars, level.goal, levelIndex, levelStars, mistakes, perfectStreak, runErrors, playTone, unlockAchievements]);
 
   useEffect(() => {
     if (['targets', 'ordered', 'scan', 'memory'].includes(level.action) && hitTargets.length >= level.goal) finishLevel();
@@ -654,6 +778,7 @@ function App() {
 
   const startAt = (index) => {
     stopNarration();
+    if (index === 0) { setRunErrors(0); setPerfectStreak(0); }
     setLevelIndex(index); setScreen('game');
     setTimeout(resetLevel, 0);
   };
@@ -662,7 +787,7 @@ function App() {
     if (completed) return;
     if (tool !== level.correct) {
       const nextMistakes = mistakes + 1;
-      setMistakes(nextMistakes);
+      setMistakes(nextMistakes); setRunErrors(value => value + 1);
       setWrongTool(tool);
       setMessage(nextMistakes >= 2 ? `小提示：找一找“${toolData[level.correct][0]}”` : '这个工具不合适，再观察一下！'); playTone('wrong');
       setTimeout(() => setWrongTool(current => current === tool ? null : current), 650);
@@ -685,7 +810,7 @@ function App() {
     if (level.action === 'memory' && showMemory) return;
     if (['ordered', 'memory'].includes(level.action) && idx !== level.order[hitTargets.length]) {
       const nextMistakes = mistakes + 1;
-      setMistakes(nextMistakes); playTone('wrong');
+      setMistakes(nextMistakes); setRunErrors(value => value + 1); playTone('wrong');
       if (level.action === 'ordered') {
         setMessage(nextMistakes >= 2 ? '顺序不对，看发光的下一步！' : `请先完成编号 ${hitTargets.length + 1}！`);
         setTimeout(() => setMessage(''), 1400);
@@ -741,7 +866,7 @@ function App() {
           reverseTravel.current += Math.abs(delta);
           if (reverseTravel.current > .45) {
             rotationWarned.current = true;
-            setMistakes(value => value + 1); setMessage('方向反啦，请跟着 ↻ 顺时针转动！'); playTone('wrong');
+            setMistakes(value => value + 1); setRunErrors(value => value + 1); setMessage('方向反啦，请跟着 ↻ 顺时针转动！'); playTone('wrong');
             setTimeout(() => setMessage(''), 1500);
           }
         }
@@ -798,7 +923,7 @@ function App() {
       setMessage('下一件无菌包正在准备中…');
     } else {
       const nextMistakes = mistakes + 1;
-      setMistakes(nextMistakes); setMessage(nextMistakes >= 2 ? '小助手已放宽绿色区并降低速度！' : '再等等，游标进入绿色区再交接！'); playTone('wrong');
+      setMistakes(nextMistakes); setRunErrors(value => value + 1); setMessage(nextMistakes >= 2 ? '小助手已放宽绿色区并降低速度！' : '再等等，游标进入绿色区再交接！'); playTone('wrong');
     }
     setTimeout(() => setMessage(''), 900);
   };
@@ -806,6 +931,7 @@ function App() {
   const finishCinematicTransition = () => {
     if (!cinematicTransition) return;
     window.clearTimeout(cinematicTimer.current);
+    stopTransitionAudio();
     stopNarration();
     setLevelIndex(cinematicTransition.toIndex);
     resetLevel();
@@ -818,8 +944,10 @@ function App() {
     const nextTransition = { fromIndex: levelIndex, toIndex: levelIndex + 1 };
     const transitionDuration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 900 : 6500;
     setCinematicTransition(nextTransition);
+    playTransitionAudio(levelIndex);
     window.clearTimeout(cinematicTimer.current);
     cinematicTimer.current = window.setTimeout(() => {
+      stopTransitionAudio();
       setLevelIndex(nextTransition.toIndex);
       resetLevel();
       setCinematicTransition(null);
@@ -857,21 +985,26 @@ function App() {
         <div className="hero-badges"><span><Sparkles/>{levels.length} 个任务</span><span><Star/>边玩边学</span><span><Droplets/>观察流程变化</span></div>
         <button className="primary-button" onClick={() => startAt(Math.min(levelIndex, levels.length - 1))}><Play fill="currentColor"/>开始冒险</button>
         {earnedStars > 0 && <button className="text-button" onClick={() => setScreen('map')}>查看闯关地图 <ChevronRight/></button>}
+        <button className="text-button achievement-link" onClick={() => setShowAchievements(true)}>查看成就 ({achievementIds.length}/{achievementCatalog.length})</button>
       </section>
       <div className="home-instruments"><Instrument type={0}/><Instrument type={1}/><Instrument type={2}/></div>
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showAchievements && <AchievementModal unlocked={achievementIds} onClose={() => setShowAchievements(false)} />}
     </main>
   );
 
   if (screen === 'map') return (
     <main className="app-shell map-screen">
-      <header className="map-header"><button className="round-button" onClick={() => setScreen('home')}><Home/></button><div><p>消毒岛地图</p><h2>选择任务</h2></div><div className="star-total"><Star fill="currentColor"/> {earnedStars}</div></header>
+      <header className="map-header"><button className="round-button" onClick={() => setScreen('home')}><Home/></button><div><p>消毒岛地图</p><h2>选择任务</h2></div><button className="star-total" onClick={() => setShowAchievements(true)} aria-label="查看成就"><Star fill="currentColor"/> {earnedStars}</button></header>
       <div className="level-map">
         {levels.map((item, i) => {
-          const unlocked = i === 0 || earnedStars >= i * 3;
-          return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{unlocked ? (earnedStars >= (i + 1) * 3 ? '★★★' : item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁'}</small></span></button></Fragment>;
+          const unlocked = i === 0 || Boolean(levelStars[i - 1]);
+          const rating = levelStars[i] ? '★'.repeat(levelStars[i]) : '';
+          const theme = levelThemes[i];
+          return <Fragment key={item.title}>{i === 9 && <div className="advanced-zone-marker"><Sparkles/><span><b>进阶挑战区</b><small>规则升级 · 失误后会自动辅助</small></span></div>}<button disabled={!unlocked} className={`map-node ${i % 2 ? 'right' : 'left'} ${unlocked ? 'unlocked' : ''} ${item.advanced ? 'advanced' : ''}`} style={{ '--node-wash': theme.wash, '--node-accent': theme.accent, '--node-deep': theme.deep, '--node-bg': `url(${sceneBackgrounds[item.scene]})` }} onClick={() => startAt(i)}><span className="node-number">{i + 1}</span><span className="node-copy"><b>{item.short}</b><small>{rating || (unlocked ? (item.advanced ? '开始进阶任务' : '开始任务') : '完成前一关解锁')}</small></span></button></Fragment>;
         })}
       </div>
+      {showAchievements && <AchievementModal unlocked={achievementIds} onClose={() => setShowAchievements(false)} />}
     </main>
   );
 
@@ -880,7 +1013,15 @@ function App() {
   );
 
   return (
-    <main className={`app-shell game-screen ${level.advanced ? 'advanced-level' : ''} ${completed ? 'level-complete' : ''}`}>
+    <main
+      className={`app-shell game-screen ${level.advanced ? 'advanced-level' : ''} ${completed ? 'level-complete' : ''}`}
+      style={{
+        '--level-wash': levelThemes[levelIndex]?.wash,
+        '--level-accent': levelThemes[levelIndex]?.accent,
+        '--level-deep': levelThemes[levelIndex]?.deep,
+        '--level-glow': levelThemes[levelIndex]?.glow,
+      }}
+    >
       <header className="game-header">
         <button className="round-button" aria-label="返回地图" onClick={() => { stopNarration(); setScreen('map'); }}><Home/></button>
         <div className="level-heading"><span>任务 {levelIndex + 1} / {levels.length}</span><b>{level.title}</b></div>
@@ -889,6 +1030,7 @@ function App() {
       <div className="progress-track" aria-label={`任务进度 ${displayProgress}%`}><span style={{ width: `${displayProgress}%` }}/><b>{displayProgress}%</b><i><Star fill="currentColor"/></i></div>
       <section className="task-card">
         <div className="helper-avatar"><ShieldCheck/><span>•ᴗ•</span></div>
+        <img className="tooth-guide-image" src={toothGuideImage} alt="牙齿精灵导游" />
         <div className="task-copy"><p>{formatHelperCopy(level.prompt)}</p><small>{formatHelperCopy(assistActive ? (assistCopy[level.scene] || '小助手已开启：当前必做设备已高亮，操作范围也更宽松') : selectedTool ? level.guide : level.tools.length > 1 ? '先从下方选择正确工具' : '从下方拿取本步骤必做工具')}</small><span className="fact-line"><Sparkles/>知识点：{levelFacts[levelIndex]}</span></div>
       </section>
       <section
@@ -913,6 +1055,7 @@ function App() {
         onPointerLeave={() => { if (level.action === 'scan') setScanPoint(null); }}
       >
         <div className={`challenge-level scene-challenge ${level.advanced ? 'advanced' : ''}`} aria-label={`挑战难度 ${challengeRank} 星`}><b>{level.advanced ? '进阶区' : '挑战'}</b><span>{[1,2,3].map(rank => <i key={rank} className={rank <= challengeRank ? 'on' : ''}>★</i>)}</span></div>
+        <SequenceFrame className="chapter-guide-animation" frames={(levelIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB).length ? (levelIndex % 2 === 0 ? toothGuideVariantA : toothGuideVariantB) : toothGuideFrames} fallback={toothGuideImage} interval={95} alt="牙齿精灵动态导游" aria-hidden="true" />
         <div className="scene-background" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }} aria-hidden="true"/>
         <div className="scene-glow"/><MainIllustration key={levelIndex} level={level} progress={displayProgress} hitTargets={hitTargets} itemCount={visualItemCount} selectedTool={selectedTool} showMemory={showMemory} hintedTarget={hintedTarget} rotateTurns={rotateTurns} onTarget={handleTarget}/>
         {observation && <div className={`clean-status process-stage-${observation.stage}`}><span className={`process-sample sample-${observation.sample}`}><i/><i/><i/></span><div><small>{observation.label}</small><b>{observation.text}</b></div></div>}
@@ -937,12 +1080,16 @@ function App() {
         </div>
       </section>
       {completed && !cinematicTransition && (levelIndex === levels.length - 1
-        ? <div className="completion-overlay"><Confetti/><div className="completion-card"><div className="heart-pop"><Heart fill="currentColor"/></div><h2>太棒啦！</h2><p>“{level.title}”完成</p><div className="stars-earned"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div><div className="knowledge-earned"><Sparkles/><span><b>本关知识</b>{levelFacts[levelIndex]}</span></div><button className="primary-button" onClick={nextLevel}>领取消毒师奖章 <ChevronRight/></button></div></div>
-        : <div className="film-completion"><div className="film-completion-image" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }}/><div className="film-completion-shade"/><div className="film-completion-copy"><span>SCENE {String(levelIndex + 1).padStart(2, '0')} · COMPLETE</span><h2>{level.title}</h2><p>{levelFacts[levelIndex]}</p><div className="film-completion-stars"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div><button onClick={nextLevel}>进入下一幕 <ChevronRight/></button></div></div>)}
+        ? <div className="completion-overlay"><Confetti/><div className="completion-card"><div className="heart-pop"><Heart fill="currentColor"/></div><h2>太棒啦！</h2><p>“{level.title}”完成</p><div className="stars-earned">{Array.from({ length: 3 }, (_, index) => <Star key={index} fill={index < (levelStars[levelIndex] || 1) ? 'currentColor' : 'none'}/>)}</div><div className="knowledge-earned"><Sparkles/><span><b>本关知识</b>{levelFacts[levelIndex]}</span></div><button className="primary-button" onClick={nextLevel}>领取消毒师奖章 <ChevronRight/></button></div></div>
+        : <div className="film-completion"><div className="film-completion-image" style={{ backgroundImage: `url(${sceneBackgrounds[level.scene]})` }}/><div className="film-completion-shade"/><div className="film-completion-copy"><span>SCENE {String(levelIndex + 1).padStart(2, '0')} · COMPLETE</span><h2>{level.title}</h2><p>{levelFacts[levelIndex]}</p><div className="film-completion-stars">{Array.from({ length: 3 }, (_, index) => <Star key={index} fill={index < (levelStars[levelIndex] || 1) ? 'currentColor' : 'none'}/>)}</div><button onClick={nextLevel}>进入下一幕 <ChevronRight/></button></div></div>)}
       {cinematicTransition && <CinematicTransition {...cinematicTransition} onSkip={finishCinematicTransition}/>} 
       {showHelp && <HelpModal level={level} onClose={() => setShowHelp(false)} />}
     </main>
   );
+}
+
+function AchievementModal({ unlocked, onClose }) {
+  return <div className="modal-backdrop" role="dialog" aria-modal="true"><div className="help-modal achievement-modal"><button className="modal-close" onClick={onClose}><X/></button><div className="help-icon"><Star fill="currentColor"/></div><h2>消毒员成就</h2><p>在规范流程中挑战自己的最佳表现。</p><div className="achievement-list">{achievementCatalog.map((item) => <div key={item.id} className={`achievement-item ${unlocked.includes(item.id) ? 'unlocked' : ''}`}><span>{unlocked.includes(item.id) ? '★' : '☆'}</span><div><b>{item.title}</b><small>{item.description}</small></div></div>)}</div><button className="primary-button" onClick={onClose}>继续训练</button></div></div>;
 }
 
 function HelpModal({ level, onClose }) {
